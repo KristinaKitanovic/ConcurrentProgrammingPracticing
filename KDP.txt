@@ -1,0 +1,6925 @@
+----------varijacija na readers writers problem ----------
+
+U sistemu postoji jedna zajednička baza dokumenata. Bazi pristupaju tri tipa procesa:
+
+čitaoci — mogu samo da čitaju dokumente
+pisci — mogu da menjaju dokumente
+recenzenti — pregledaju dokumente; oni ne menjaju sadržaj, ali njihov rad zahteva da u tom trenutku nema pisaca
+
+Pravila su sledeća:
+
+Više čitalaca može istovremeno pristupati bazi.
+Više recenzenata može istovremeno pristupati bazi.
+Čitaoci i recenzenti mogu biti unutra u isto vreme.
+Pisac mora imati ekskluzivan pristup:
+dok je pisac unutra, ne sme biti nijedan čitalac ni recenzent
+dok postoje čitaoci ili recenzenti unutra, pisac mora čekati
+Ako se pojavi pisac, novi čitaoci i novi recenzenti ne smeju ga beskonačno odlagati.
+
+Napisati program korišćenjem semafora koji realizuje sinhronizaciju procesa:
+
+Reader
+Writer
+Reviewer
+
+
+int rcnt = 0; 
+sem entry = 1; 
+sem mutexR = 1; 
+
+sem rw = 1;
+
+
+
+void Readers(){
+wait(entry);
+wait(mutexR); 
+rcnt++; 
+if(rcnt == 1){
+	wait(rw);
+}
+signal(mutexR); 
+signal(entry);
+review(); 
+wait(mutexR); 
+rcnt--; 
+if(rcnt == 0)signal(rw); 
+signal(mutexR);
+}
+
+
+void Reviewer(){
+wait(entry);
+wait(mutexR); 
+rcnt++; 
+if(rcnt == 1){
+	wait(rw);
+}
+signal(mutexR); 
+signal(entry);
+read(); 
+wait(mutexR); 
+rcnt--; 
+if(rcnt == 0)signal(rw); 
+signal(mutexR);
+}
+
+void Writer(){
+wait(entry); 
+wait(rw); 
+write(); 
+signal(rw)
+signal(entry)
+}
+
+------varijacija na Readers Writers ---------------
+Jednoj zajedničkoj bazi podataka pristupaju tri tipa procesa:
+
+čitaoci — samo čitaju bazu
+pisci — menjaju bazu
+analitičari — izvršavaju složene upite; ne menjaju bazu, ali koriste mnogo resursa
+
+Važe sledeća pravila:
+
+Više čitalaca može istovremeno pristupati bazi.
+Najviše jedan analitičar može biti u bazi u istom trenutku.
+Čitaoci i analitičar smeju biti unutra u isto vreme.
+Pisac mora imati ekskluzivan pristup:
+dok pisac radi, ne sme biti nijedan čitalac ni analitičar
+dok postoji čitalac ili analitičar unutra, pisac čeka
+Ako pisac čeka, novi čitaoci i novi analitičari ne smeju ga beskonačno odlagati.
+Analitičari međusobno ne smeju raditi paralelno, čak i kad nema pisca.
+Treba implementirati sinhronizaciju za:
+Reader()
+Writer()
+Analyst()
+
+
+
+
+sem mutexR = 1; 
+sem mutexA = 1; 
+sem rwa = 1; 
+sem entry = 1; 
+int readers  = 0; 
+int ana =0; 
+
+
+
+
+void Reader(){
+wait(entry)
+wait(mutexR) 
+readers ++; 
+if(readers == 1 && ana == 0)wait(rwa); 
+
+signal(mutexR) 
+signal(entry); 
+
+read(); 
+
+wait(mutexR); 
+readers--; 
+if(readers == 0 && ana == 0) signal(rwa); 
+signal(mutexR)
+
+
+}
+
+void Analiyst(){
+wait(mutexA);
+wait(entry);
+wait(mutexR); 
+ana++; 
+if(readers == 0)wait(rwa); 
+signal(mutexR)
+signal(entry)
+analize()
+wait(mutexR);
+ana--; 
+if(ana == 0 && readers ==0)signal(rwa)
+signal(mutexR); 
+signal(mutexA); 
+
+}
+
+
+void Writer(){
+wait(entry); 
+wait(rwa)
+write()
+signal(rwa)
+signal(entry);
+}
+
+
+
+----Dining philosophers problem-----------
+
+Пет филозофа седи око стола. Сваки филозоф
+наизменично једе и размишља. Испред сваког
+филозофа је тањир шпагета. Када филозоф
+пожели да једе, он узима две виљушке које се
+налазе уз његов тањир. На столу, међутим, има
+само пет виљушки. Значи, филозоф може да једе
+само када ниједан од његових суседа не једе.
+Написати алгоритам за филозофа (0 ≤ i ≤ 4).
+
+
+const int N = ...;
+sem forks[N] = {1}; 
+
+//0 uzima 0 i 1 
+//1 uzima 1 i 2
+//2 uzima 2 i 3
+//3 uzima 3 i 4
+//4 uzima 0 i 4 ako ima 5 filozofa, znaci svi uzimaju i i i+1, osim poslednjeg koji uzima 0 pa i 
+
+
+void philosopher(int i){
+while(true){
+	if(i == N - 1){
+	     wait(forks[0]); 
+	     wait(forks[i]); 
+	}
+else{
+wait(forks[i]); 
+wait(forks[i + 1]); 
+}
+
+
+eat(); 
+
+	if(i == N - 1){
+	     signal(forks[0]); 
+	     signal(forks[i]); 
+	}
+else{
+signal(forks[i]); 
+signal(forks[i + 1]); 
+}
+
+think(); 
+}
+
+}
+
+
+
+---------------varijacija DINING PHILOSOPHERS PROBLEMA---------
+Za okruglim stolom sedi N programera. Između svaka dva susedna programera nalazi se po jedan monitor, ukupno N monitora.
+
+Da bi programer mogao da radi na svom zadatku, mora istovremeno da koristi:
+
+monitor sa svoje leve strane
+monitor sa svoje desne strane
+i jedan zajednički centralni ekran
+
+Centralni ekran je jedinstven i ima ga samo jedan.
+
+Proces programera izgleda ovako:
+
+while(true){
+    think();
+    take_resources();
+    code();
+    release_resources();
+}
+
+Važe sledeća pravila:
+
+Za code() programer mora imati oba susedna monitora i centralni ekran.
+
+
+
+const int N  = ...; 
+sem monitors[N] = {1} 
+sem mutexCentral = 1; 
+
+
+void programmer(){
+
+while(true){
+
+think(); 
+
+	if(i == N - 1){
+	     wait(monitors[0]); 
+	     wait(monitors[i]); 
+	}
+else{
+wait(monitors[i]); 
+wait(monitors[i + 1]); 
+}
+wait(mutexCentral)
+
+code(); 
+
+signal(mutexCentral)
+
+	if(i == N - 1){
+	     signal(monitors[0]); 
+	     signal(monitors[i]); 
+	}
+else{
+signal(monitors[i]); 
+signal(monitors[i + 1]); 
+}
+
+
+}
+}
+
+
+------------varijacija dining philosophers ------------------
+U laboratoriji radi N istraživača poređanih u krug. Između svaka dva susedna istraživača nalazi se po jedan lokalni uređaj, ukupno N uređaja.
+
+Da bi istraživač mogao da izvrši eksperiment, mora istovremeno da ima:
+
+levi lokalni uređaj
+desni lokalni uređaj
+i pristup serveru
+
+U laboratoriji postoje 2 servera ukupno.
+Za experiment() istraživač mora imati oba susedna uređaja i jedan server.
+Najviše 2 istraživača mogu koristiti servere u isto vreme.
+Dva susedna istraživača ne mogu istovremeno raditi, jer dele lokalni uređaj.
+
+
+
+
+
+const int N  = ...; 
+sem devices[N] = {1} 
+sem mutexServers = 2; 
+
+
+void programmer(){
+
+while(true){
+
+think(); 
+
+	if(i == N - 1){
+	     wait(devices[0]); 
+	     wait(devices[i]); 
+	}
+else{
+wait(devices[i]); 
+wait(devices[i + 1]); 
+}
+wait(mutexServers)
+
+code(); 
+
+signal(mutexServers)
+
+	if(i == N - 1){
+	     signal(devices[0]); 
+	     signal(devices[i]); 
+	}
+else{
+signal(devices[i]); 
+signal(devices[i + 1]); 
+}
+
+
+}
+
+
+
+
+-----------------------------------PRODUCER & CONSUMER---------------------
+	
+
+
+
+const int N = ...;
+int buffer[N]; 
+sem mutexC = 1; 
+sem mutexP = 1; 
+int tail = 0, head = 0; 
+sem itemAvailable = 0, spaceAvailable = N;
+
+
+
+void producer(){
+int product = make(); 
+wait(spaceAvailable)
+wait(mutexP)
+
+buffer[tail] =  product; 
+tail = tail + 1 mod n 
+
+signal(mutexP); 
+signal(itemAvailable)
+
+
+}
+void consumer(){
+wait(itemAvailable)
+wait(mutexC)
+
+int product = buffer[head]; 
+head= head+ 1 mod n 
+
+signal(mutexC); 
+signal(spaceAvailable)
+}
+
+
+
+---------varijacija producer consumer ---------------DOBAR ZADATAK
+
+Imamo sistem sa:
+
+više proizvođača (producers) i više potrošača (consumers)
+bafer ograničene veličine N
+proizvođači proizvode dve vrste proizvoda:
+tip A
+tip B
+Pravila:
+Bafer je zajednički za oba tipa proizvoda (isti niz).
+Consumeri imaju ograničenje:
+ne smeju uzeti više od K uzastopnih proizvoda istog tipa
+ako su uzeli K proizvoda tipa A, sledeći mora biti B (ako postoji), i obrnuto
+Ako u baferu postoji samo jedan tip proizvoda, consumer:
+mora da čeka dok se ne pojavi drugi tip (ako je dostigao limit K)
+Proizvođači:
+nasumično proizvode A ili B
+ne smeju da prepišu bafer (klasično ograničenje)
+Mora se obezbediti:
+nema race condition-a
+nema deadlock-a
+nema starvation-a (nijedan tip ne sme biti zauvek ignorisan)
+
+
+
+u ovom zadatku FIFO elemenata se NE mora održati
+
+
+
+typedef struct{
+int val; 
+char type;
+}element; 
+
+sem mutexC = 1, mutexP = 1;
+int head = 0, tail = 0;
+const int K = ...;
+const int N = ...;
+
+sem itemAAvailable = 0;
+sem itemBAvailable = 0;
+sem spaceAvailable = N;
+sem itemAvailable = 0;
+
+int cnt = 0;
+char last = C;
+
+element buffer[N];
+
+void producer() {
+    while (true) {
+        element el = makeElement();
+
+        wait(spaceAvailable);
+        wait(mutexP);
+
+        int c = round(rand());
+
+        if (c == 1) {
+            el.type = A;
+            buffer[tail] = el;
+            tail = (tail + 1) mod N;
+
+            signal(mutexP);
+
+            signal(itemAvailable);
+            signal(itemAAvailable);
+        } else {
+            el.type = B;
+            buffer[tail] = el;
+            tail = (tail + 1) mod N;
+
+            signal(mutexP);
+            signal(itemAvailable);
+            signal(itemBAvailable);
+        }
+    }
+}
+void consumer() {
+    while (true) {
+        element el;
+//////////////!!!!!!!!!!!!!!!!!!!!!  
+        wait(mutexC);
+        if (cnt < K) {
+            signal(mutexC); 
+            wait(itemAvailable); 
+            wait(mutexC); 
+
+            
+//////////////!!!!!!!!!!!!!!!!!!!!
+//bez ovoga ovako , bi neki consumer prosao mutexC i blokirao se unutra na itemBAvailable npr i onda nijedan drugi consumer ne bi mogao da radi 
+//nista dok se ne proizvede proizvod B , a oni consumeri koji mogu da pokupe A bi trebalo da mogu to da rade 
+
+
+
+
+
+            el = buffer[head];
+            head = (head + 1) % N;
+            if (el.type == 'A')
+                wait(itemAAvailable);
+            else
+                wait(itemBAvailable);
+            if (last == el.type)
+                cnt++;
+            else {
+                last = el.type;
+                cnt = 1;
+            }
+            signal(mutexC);
+            signal(spaceAvailable);
+        } else {
+            if (last == 'A') {
+                signal(mutexC);
+                wait(itemBAvailable);   // prvo specifican tip
+                wait(itemAvailable);    // ovo nece blokirati
+                wait(mutexC);
+                el = pronadjiPrviTipBISveNakonNjegaShiftuj();
+                last = 'B';
+                cnt = 1;
+            } else {
+                signal(mutexC);
+                wait(itemAAvailable);   // prvo specifican tip
+                wait(itemAvailable);    // ovo nece blokirati
+                wait(mutexC);
+                el = pronadjiPrviTipAISveNakonNjegaShiftuj();
+                last = 'A';            // ispravljeno
+                cnt = 1;
+            }
+            signal(mutexC);
+            signal(spaceAvailable);
+        }
+        consume(el);
+    }
+}
+
+
+
+
+
+
+
+
+
+-------------------ATOMIC BROADCAST PROBLEM ------------------
+
+
+Постоји један произвођач и N потрошача који деле
+заједнички једноелементни бафер. Произвођач
+убацује производ у бафер и чека док свих N
+потрошача не узму исти тај производ. Тада
+започиње нови циклус производње. 
+
+
+
+/////PRVI NACIN
+
+sem mutex = 1;
+sem pSem = 0; 
+sem cSem = 0;
+sem barrier = 0;
+
+
+int element; 
+int cnt = 0; 
+const int N = ...; 
+
+
+
+
+void product(){
+    while(true){
+
+        element = make_element(); 
+        for(int i = 0; i < N ; i++)signal(cSem);
+        wait(pSem);
+    }
+    
+
+}
+
+void consumer(){
+    while(true){
+        wait(cSem);
+        wait(mutex); 
+        
+        int e = element; 
+        cnt++; 
+        if(cnt == N){
+            cnt = 0; 
+            signal(pSem); 
+
+            for(int i = 0; i < N - 1; i++)signal(barrier);
+
+        }
+        signal(mutex); 
+
+        
+
+        consume(e); 
+        wait(barrier);
+        
+
+    }
+}
+
+
+
+//DRUGI NACIN
+
+
+sem mutex = 1; 
+sem empty = 1; 
+sem full[N] = {0}; 
+int cnt = 0; 
+
+
+int element; 
+
+
+void producer(){
+while(true){
+
+    wait(empty); 
+    element = make_element(); 
+    for(int i = 0; i < N; i++)signal(full[i]);
+}
+}
+
+
+void consumer(int i){
+while(true){
+    wait(full[i])
+    wait(mutex); 
+    
+    int e = element; 
+    cnt++; 
+    if(cnt == N){
+
+        cnt = 0; 
+        signal(empty);
+    }
+
+    signal(mutex); 
+    consume(e);
+}
+}
+
+
+Постоји један произвођач и N потрошача који деле
+заједнички бафер капацитета B. Произвођач
+убацује производ у бафер на који чекају свих N
+потрошача, и то само у слободне слотове. Сваки
+потрошач мора да прими производ у тачно оном
+редоследу у коме су произведени, мада
+различити потрошачи могу у исто време да
+узимају различите производе.-------------------------------------DOBAR ZADATAK-------------
+//JA SAM GA RESILA OVAKO ALI TU SE DESAVA DA SAMO JEDNA PRODJE NA PRVOM SLOTU I NA DALJE SAMO 1 PO GRUPI RADI SVE A TREBALO BI NEKAKO 
+// DA SE OSLOBODE ONI KOJI CEKAJU I DA SE TAKMICE ZA NAREDNI SLOT 
+//ALI JA NE ZNAM KAKO DA NAPRAVIM TO 
+
+sem full[G] = {0};      // po grupi
+int groupHead[G] = {0}; // head po grupi
+sem mutexG[G] = {1};    // stiti groupHead
+int cntG[B] = {0};
+sem mutexC[B] = {1};
+
+void producer() {
+    while (true) {
+        element el = make_element();
+        wait(empty);
+        wait(mutexP);
+            buffer[tail] = el;
+            tail = (tail + 1) % B;
+        signal(mutexP);
+        for (int g = 0; g < G; g++) signal(full[g]);
+    }
+}
+
+void consumer(int id, int g) {
+    while (true) {
+        wait(full[g]);          // cekaj element za svoju grupu
+
+        // atomicno uzmi sledeci slot grupe
+        wait(mutexG[g]);
+            int ri = groupHead[g];
+            groupHead[g] = (groupHead[g] + 1) % B;
+        signal(mutexG[g]);
+
+        // pristupi slotu
+        wait(mutexC[ri]);
+            int e = buffer[ri];
+            cntG[ri]++;
+            if (cntG[ri] == G) {
+                cntG[ri] = 0;
+                signal(empty);
+            }
+        signal(mutexC[ri]);
+
+        consume(e);
+    }
+}
+
+
+
+Постоји M произвођача и N потрошача који деле заједнички 
+бафер капацитета B. Сваки потрошач мора да прими све елементе
+ тачно у редоследу производње. Произвођачи производе елементе
+  двају типова — тип А и тип Б. Потрошачи су подељени у две групе:
+
+Група А — прима само елементе типа А
+Група Б — прима само елементе типа Б
+
+Произвођач сме да препише слот тек када 
+сви потрошачи којима је тај елемент намењен узму елемент
+ из тог слота. Елементи оба типа иду у исти бафер.
+
+
+ const int M = ...; 
+ const int N = ...;
+ const int B = ...; 
+
+
+ int cnt[B] = {0};
+ sem mutexP = 1, mutexC[B] = {1};
+ sem empty = B; 
+ element buffer[B];
+ int head= 0, tail = 0;
+
+typedef struct{
+    int val; 
+    char type; 
+}element; 
+
+ void producer(){
+
+while(true){
+    int c = round(rand()); //kao daje 0 ili 1 
+    element el = make_element();
+    if(c == 0){
+        el.type = A; 
+
+    }
+    else {el.type = B;}
+
+    wait(empty);
+    wait(mutexP); 
+    buffer[tail] = el; 
+    tail = (tail + 1)mod B ;
+    for(int i = 0; i < N; i++)signal(full[i]); 
+    signal(mutexP); 
+    
+}
+
+ }
+
+
+ void consumer(int i, char type){
+    int ri = 0;
+    while(true){
+
+        element el = null; 
+        wait(full[i]); 
+        wait(mutexC[ri]); 
+        cnt[ri]++;
+        if(buffer[ri].type == type){
+             e = buffer[ri]; 
+        }
+        
+               
+        if(cnt[ri] == N){
+            cnt[ri] = 0; 
+            signal(empty); 
+        }
+            
+             
+        signal(mutexC[ri]); 
+        ri = (ri + 1)mod B; 
+        if(el)consume(el); 
+       
+
+
+    }
+ }
+
+ Постоји M произвођача и N потрошача који деле
+  заједнички бафер капацитета B. Произвођачи производе 
+  елементе три типа — А, Б и Ц. Потрошачи су подељени у три
+   групе по типу. Свака група мора примити елементе свог типа 
+   тачно у редоследу производње.
+Додатна правила:
+
+Елемент типа Ц је приоритетан — чим се појави
+ у бафeru, сви потрошачи групе Ц морају га узети пре него што 
+ потрошачи група А и Б узму следећи елемент свог типа
+Произвођач сме да препише слот тек када сви релевантни
+ потрошачи узму елемент
+Баfer је заједнички за све типове-------------------DOBAR ZADATAK---------------
+
+
+const int M = ...;
+const int N = ...;
+const int B = ...;
+const int NA = ...;
+const int NB = ...;
+const int NC = ...;
+
+sem mutexP = 1;
+sem mutexC[B] = {1};
+sem empty = B;
+element buffer[B];
+int tail = 0;
+sem full[N] = {0};
+int cnt[B] = {0};
+
+sem mutexShared = 1;  // stiti cCount i waiting
+int cCount = 0;       // broj C elemenata koji cekaju u baferu
+int waiting = 0;      // broj A/B consumera koji cekaju
+sem cDone = 0;        // A/B cekaju ovde dok C ne zavrsi
+
+typedef struct {
+    int val;
+    char type;
+} element;
+
+void producer(int id) {
+    while (true) {
+        element el = make_element();
+        int c = rand() % 3;
+        if (c == 0) el.type = 'A';
+        else if (c == 1) el.type = 'B';
+        else el.type = 'C';
+
+        wait(empty);
+        wait(mutexP);
+            // ako je C, povecaj cCount pre ubacivanja
+            if (el.type == 'C') {
+                wait(mutexShared);
+                    cCount++;
+                signal(mutexShared);
+            }
+            buffer[tail] = el;
+            tail = (tail + 1) % B;
+            for (int i = 0; i < N; i++) signal(full[i]);
+        signal(mutexP);
+    }
+}
+
+void consumer(int id, char type) {
+    int ri = 0;
+    while (true) {
+        wait(full[id]);
+
+        // A i B provjeravaju da li ima C elemenata
+        if (type == 'A' || type == 'B') {
+            wait(mutexShared);
+            while (cCount > 0) {//da nije while nego if moglo bi da se desi da oslobodimo nit od cDOne ali da ona ne krene da se izvrsava neko vreme i onda pocne kada opet ima C unutra zato ide while
+                waiting++;
+                signal(mutexShared);
+                wait(cDone);        // cekaj da C consumeri zavrse
+                wait(mutexShared);
+                waiting--;
+                
+            }
+                signal(mutexShared);
+            
+        }
+
+        wait(mutexC[ri]);
+            element el = null;
+            if (buffer[ri].type == type) {
+                el = buffer[ri];
+            }
+
+            cnt[ri]++;
+
+            // ako je C consumer, smanji cCount
+            if (type == 'C') {
+                wait(mutexShared);
+                    cCount--;
+                    // ako su svi C consumeri uzeli, probudi A i B
+                    if (cCount == 0) {
+                        for (int i = 0; i < waiting; i++)
+                            signal(cDone);
+                    }
+                signal(mutexShared);
+            }
+
+            if (cnt[ri] == N) {
+                cnt[ri] = 0;
+                signal(empty);
+            }
+        signal(mutexC[ri]);
+
+        ri = (ri + 1) % B;
+        if (el) consume(el);
+    }
+}
+
+Постоји M произвођача и N потрошача који деле заједнички
+ бафер капацитета B. Произвођачи производе елементе два типа
+  — А и Б. Потрошачи су подељени у две групе (А и Б).
+Додатна правила:
+
+Елементи се убацују у бафер редом
+Потрошачи морају примати елементе свог типа тачно у редоследу 
+производње
+Бафер има ограничење: не сме бити више од K узастопних елемената
+ истог типа у бафору у исто време — ако произвођач покуша да убаци 
+ А елемент а последњих K елемената у бафору су А, мора да чека
+Произвођач сме да препише слот тек када сви релевантни потрошачи
+ узму елемент
+
+const int K = ...; 
+const int M = ..; 
+const int N = ...; 
+
+
+sem empty = B ; 
+element buffer[B]; 
+typedef struct{
+    int val; char type ; 
+}element; 
+
+
+sem mutexP = 1; 
+sem mutexC[B] = {1}; 
+char last = C; 
+int cl = 0; 
+int tail = 0; 
+int cnt[B] = {0};
+int blocked = 0; 
+sem pSem = 0;
+sem full[N] = {0}; 
+
+
+
+
+void producer(){
+    while(true){
+        element el = make_element(); 
+        int c = round(rand());
+         if(c == 0){
+        el.type = A; 
+        }
+        else {el.type = B;}
+        
+        wait(empty);
+        wait(mutexP); 
+        while(el.type == last && cl == K)//mora da se blokira
+         {
+            blocked++; 
+            signal(mutexP); 
+            wait(pSem); 
+    
+            wait(mutexP);
+         }
+        
+         if(last == el.type)cl++; 
+         else{
+            last = el.type; 
+            cl = 1;
+            for(int i = 0; i < blocked; i++){
+                signal(pSem);
+            }
+            blocked  = 0; 
+         }
+        buffer [tail] = el; 
+        tail = (tail + 1) mod B; 
+        for(int i = 0; i < N; i++)signal(full[i]); 
+        signal(mutexP); 
+
+    }
+
+}
+
+
+void consumer(int id, char type){
+
+    int ri = 0; 
+    while(true){
+
+        element el; 
+        wait(full[id]);
+        wait(mutexC[ri]); 
+
+        if(type == buffer[ri].type)
+        {el = buffer[ri]; }
+        cnt[ri]++; 
+        if(cnt[ri] == N){
+            cnt[ri] = 0; 
+            signal(empty); 
+        }
+
+
+        signal(mutexC[ri]); 
+
+        ri = (ri + 1) mod B ; 
+        if(el)consume(el)
+
+    }
+}
+
+
+
+
+
+-----------------UNISEX BATHROOM PROBLEM ---------------------------------------------------
+
+
+Постоји тоалет капацитета N (N > 1) који могу да
+користе жене и мушкарци, такав да се у исто
+време у тоалету не могу наћи и жене и мушкарци.
+Написати програм за жене и мушкарце који
+долазе до тоалета, користе га и напуштају га
+користећи семафоре. Избећи изгладњавање.
+
+sem ticket = N;
+sme toilet = 1; 
+sem entry = 1; 
+sem mutexM = 1; 
+sem mutexW = 1;
+int m = 0, w = 0;
+
+void man(){
+    while(true){
+        wait(entry);
+        wait(mutexM);
+        m++; 
+
+        if(m == 1){
+            wait(toilet); 
+        }
+
+         
+        signal(mutexM); 
+        signal(entry);
+        wait(ticket);
+        usetoilet(); 
+        signal(ticket); 
+        wait(mutexM);
+
+        m--; 
+        if(m == 0)signal(toilet);
+        signal(mutexM);
+
+
+    }
+
+}
+
+
+void woman(){
+
+    while(true){
+
+        wait(entry); 
+        wait(mutexW);
+        w++; 
+        if(w == 1){
+            wait(toilet);
+        }
+
+        signal(mutexW); 
+        signal(entry); 
+        wait(ticket); 
+        usetoilet(); 
+        signal(ticket);
+        wait(mutexW); 
+        w--; 
+        if(w == 0)signal(toilet); 
+        signal(mutexW);  
+        
+    }
+}
+
+Постоји тоалет капацитета N. Важе следећа правила:
+
+У тоалету не смеју бити жене и мушкарци у исто време
+Особе могу бити хитне или обичне. toalet je kapaciteta N. 
+Хитне особе увек имају приоритет над обичнима истог пола
+Избећи изгладњивање
+Hitnost je prioritet samo unutar istog pola —
+ hitna žena ima prioritet nad običnom ženom, 
+ ali ne može ući dok su muškarci unutra.
+
+
+
+
+sem toilet = 1; 
+sem stall = N; 
+int m = 0, w = 0;//br koliko cekaju ili su usli 
+sem entry = 1; 
+sem mutexM = 1, mutexW = 1; 
+int hitnim = 0, hitniw = 0;
+
+
+
+
+void man(bool hitan){
+
+
+    while(true){
+        wait(entry); 
+        wait(mutexM); 
+        if(hitan)hitnim++; 
+        m++;
+        if(m == 1)wait(toilet);
+        
+        signal(mutexM); 
+        signal(entry); 
+        
+        if(!hitan){
+        wait(mutexM);
+        while(hitnim > 0){
+            signal(mutexM);
+            yield();
+            wait(mutexM);
+        }
+        signal(mutexM);
+
+        
+    }
+        wait(stall); 
+        use();
+        signal(stall); 
+
+        wait(mutexM); 
+        if(hitan)hitnim--;     
+        m--; 
+        if(m == 0)signal(toilet); 
+        signal(mutexM ); 
+        
+        
+    }
+}
+void woman(bool hitan){
+
+
+    while(true){
+        wait(entry); 
+        wait(mutexW); 
+        if(hitan)hitniw++; 
+        w++;
+        if(w == 1)wait(toilet);
+        
+        signal(mutexW); 
+        signal(entry); 
+        if(!hitan){
+        wait(mutexW);
+        while(hitniw > 0){
+            signal(mutexW);
+            yield();
+            wait(mutexW);
+        }
+        signal(mutexW);
+
+        
+    }
+        wait(stall); 
+        use();
+        signal(stall);
+        wait(mutexW);
+        if(hitan)hitniw--; 
+        signal(mutexW);
+        w--; 
+        if(w == 0)signal(toilet); 
+        signal(mutexW); 
+        
+        
+    }
+}
+
+
+Постоји тоалет капацитета N. Важе следећа правила:
+
+У тоалету не смеју бити жене и мушкарци у исто време
+Тоалет има режим чишћења — повремено долази спремач који мора очистити тоалет
+Спремач може ући само када је тоалет потпуно празан
+Док спремач чисти, нико не сме ући
+Спремач има приоритет над свим особама које чекају
+Избећи изгладњивање. MOZE vise cleanera 
+
+
+sem mutexM = 1; 
+sem mutexW = 1; 
+
+sem toilet = 1; 
+sem ticket = N; 
+sem entry = 1; 
+
+
+int w = 0, m = 0, c  = 0;
+sem mutexCleaner  = 1; 
+
+
+
+void man(){
+    while(true){
+        wait(entry); 
+        wait(mutexM); 
+        m++; 
+        if(m == 1){
+            wait(toilet); 
+        }
+        signal(mutexM); 
+        signal(entry); 
+
+        wait(ticket); 
+        use(); 
+        signal(ticket); 
+
+        wait(mutexM); 
+        m--; 
+        if(m == 0)signal(toilet); 
+        signal(mutexM); 
+    }
+}
+
+
+void woman(){
+    while(true){
+        wait(entry); 
+        wait(mutexW); 
+        w++; 
+        if(w == 1){
+            wait(toilet); 
+        }
+        signal(mutexW); 
+        signal(entry); 
+
+        wait(ticket); 
+        use(); 
+        signal(ticket); 
+
+        wait(mutexW); 
+        w--; 
+        if(w == 0)signal(toilet); 
+        signal(mutexW); 
+    }
+}
+
+
+void cleaner(){
+    wait(entry); 
+    wait(mutexCleaner); 
+    c++; 
+    if(c == 1){
+    wait(toilet); 
+    }
+    signal(mutexCleaner); 
+    signal(entry); 
+
+    clean(); 
+    wait(mutexCleaner);
+    c--; 
+    if( c == 0){signal(toilet); }
+    signal(mutexCleaner); 
+}
+
+
+Постоји тоалет капацитета N. Важе следећа правила:
+
+У тоалету не смеју бити жене и мушкарци у исто време
+Деца могу ући само ако у тоалету већ има особа (мушкараца или жена)
+— не смеју ући сама
+Дете улази са тренутним полом који је у тоалету
+Мушкарац или жена не сме изаћи ако је једини свог пола у
+тоалету, а унутра још има деце — мора сачекати да сва деца
+ изађу прва
+Дозвољено је изгладњивање особе која чека да деца изађу 
+(та особа може чекати бесконачно)
+Избећи изгладњивање у свим осталим случајевима
+
+
+sem entry = 1; 
+sem mutexM = 1; mutexW = 1, mutexCh = 1; 
+int waitingchildren = 0; 
+int m  = 0, w = 0; 
+int c = 0; 
+sem toLeave = 0; 
+int toLeaveCnt = 0; 
+sem children = 0; 
+
+
+
+void man(){
+    while(true){
+        wait(entry); 
+        wait(mutexM); 
+        m++; 
+        if(m == 1)wait(toilet); 
+        wait(mutexCh); 
+        for(int i = 0; i < waitingchildren; i++)signal(children); 
+        if(toLeaveCnt)signal(toLeave);
+        signal(mutexCh);
+        signal(mutexM); 
+        signal(entry); 
+
+
+
+        wait(ticket); 
+        use(); 
+        signal(ticket); 
+
+        wait(mutexM);
+        wait(mutexCh);
+        while(c > 0 && m == 1){
+            toLeaveCnt++;
+            signal(mutexM); 
+            signal(mutexCh); 
+            wait(toLeave); 
+            wait(mutexCh);
+            wait(mutexM); 
+            toLeaveCnt--;
+
+        }
+        m--; 
+        if(m  == 0)signal(toilet); 
+        signal(mutexCh);
+        signal(mutexM); 
+
+    }
+}
+
+void woman(){
+    while(true){
+        wait(entry); 
+        wait(mutexW); 
+        w++; 
+
+        if(w == 1)wait(toilet); 
+        wait(mutexCh);
+        for(int i = 0; i < waitingchildren; i++)signal(children); 
+        if(toLeaveCnt)signal(toLeave);
+        signal(mutexCh); 
+        signal(mutexW); 
+        signal(entry); 
+
+
+        wait(ticket); 
+        use(); 
+        signal(ticket); 
+
+        wait(mutexW); 
+      
+        wait(mutexCh); 
+        while(c > 0 && w == 1){
+            toLeaveCnt++;
+            signal(mutexW); 
+            signal(mutexCh);
+            wait(toLeave); 
+            wait(mutexCh); 
+            wait(mutexW); 
+            toLeaveCnt--;
+
+        }
+          w--; 
+        if(w  == 0)signal(toilet); 
+        signal(mutexCh);
+        signal(mutexW); 
+
+
+    }
+}
+
+void child(){
+
+    while(true){
+        wait(entry); 
+        wait(mutexCh); 
+        while(m  == 0 && w == 0){
+            waitingchildren++; 
+            signal(mutexCh); 
+            signal(entry); 
+            wait(children); 
+            waitingchildren--; 
+            wait(entry); 
+            wait(mutexCh); 
+
+        }
+        c++; 
+        signal(mutexCh); 
+        signal(entry); 
+        
+
+
+        wait(ticket); 
+        use(); 
+        signal(ticket); 
+
+        wait(mutexCh); 
+        c--; 
+        if(c == 0){
+            signal(toLeave); 
+        }
+
+        signal(mutexCh); 
+    }
+}
+
+
+----------------THE DINING SAVAGS PROBLEM-----------
+
+
+Племе људождера једе заједничку вечеру из казана
+који може да прими M порција куваних мисионара.
+Када људождер пожели да руча, онда се он сам
+послужи из заједничког казана, уколико казан није
+празан. Уколико је казан празан, људождер буди
+кувара и сачека док кувар не напуни казан. Није
+дозвољено будити кувара уколико се налази бар
+мало хране у казану. Користећи семафоре
+написати програм који симулира понашање
+људождера и кувара.
+
+
+const int M = ...; 
+const int cnt = 0; 
+sem mutexL = 1; 
+
+
+void ljudozder(){
+
+    while(true){
+        wait(mutexL); //pridje kazanu
+        if(cnt == 0){
+            signal(cook); 
+            wait(canEat);
+        }
+
+        cnt--; 
+        getServing();
+        signal(mutexL); 
+        eat(); 
+
+    }
+
+}
+
+
+void kuvar(){
+
+    while(true){
+        wait(cook); 
+        prepare(); 
+        cnt = M; 
+        signal(canEat); 
+    }
+}
+
+Постоји племе људождера и један кувар. Људождери деле два казана — казан А и казан Б, оба капацитета M порција. Важе следећа правила:
+
+Људождер увек прво покушава да узме из казана А
+Ако је казан А празан, буди кувара да напуни А и чека
+Док чека на А, људождер може узети из казана Б ако има порција
+Кувар пуни само казан који је позван да напуни — пуни га до врха и враћа се да спава
+Није дозвољено будити кувара ако казан није празан
+Избећи изгладњивање
+
+//GLUP ZADATAK NEMA POENTE, problem napuni se a ali je sve blokirano dok se ne napuni i b da ljudozder koji blokira uzme to nema nikakvog smisla ali nmp dal moze bolje da nije mng komplikovano 
+
+
+const int M = ...; 
+sem mutexA = 1; 
+sem mutexB = 1; 
+sem cook = 0
+ 
+sem canEatB = 0;
+int cntA = 0; 
+int cntB = 0; 
+
+
+void ljudozder(){
+
+  
+    while(true){
+        bool kazanA = true;
+        wait(mutexA); 
+        if(cntA == 0){
+            //probudi kuvara
+            signal(cook); 
+           
+            wait(mutexB);
+            if(cntB == 0){
+                signal(cook);
+                 
+                wait(canEatB); 
+                kazanA = false;
+            }
+            
+                signal(mutexB); 
+                
+            
+                  
+        }
+        signal(mutexA);
+
+        if(kazanA){
+            wait(mutexA);
+            cntA--; 
+            signal(mutexA);
+        }
+        else{
+           wait(mutexB);
+            cntB--; 
+            signal(mutexB);
+             
+        }
+        
+        eat(); 
+
+    }
+}
+
+
+void kuvar(){
+    while(true){
+        wait(cook); 
+        pripremi();
+        
+        if(cntA == 0){
+            cntA = M; 
+        }
+       
+        else{
+            
+            cntB = M; 
+            
+            signal(canEatB);
+        }
+
+        
+    }
+}
+
+
+
+Постоји племе људождера и један кувар. 
+Људождери деле казан капацитета M порција. 
+Људождери су подељени у два племена — племе А и племе Б.
+ Важе следећа правила:
+
+Из казана не смеју јести припадници оба племена у исто време
+Када људождер пожели да руча, служи се ако казан није празан и
+ ако нема припадника супротног племена
+Ако је казан празан, само један људождер буди кувара и чека,
+ остали чекају са њим
+Кувар пуни казан до врха и враћа се да спава
+Није дозвољено будити кувара ако има хране у казану
+Избећи изгладњивање — ни племе А ни племе Б не сме чекати бесконачно
+
+
+
+sem kazan = 1; 
+const int M = ...; 
+sem cook = 0; 
+sem canEat = 0 ; 
+sem entry = 1; //da spreci izgladnjivanje
+int cntA = 0, cntB = 0; 
+int cntfood = 0;
+
+sem mutexA = 1; mutexB = 1;
+
+
+void ljudozderA(){
+
+    while(true){
+
+        wait(entry);
+        wait(mutexA);  
+        cntA++; 
+        if(cntA == 1)wait(kazan); 
+        signal(mutexA);
+        if(cntfood == 0){
+
+            signal(cook); 
+            wait(canEat); 
+        }
+
+        uzmiporciju();
+        cntfood--; 
+
+        signal(entry); 
+
+        eat(); 
+
+         wait(mutexA); 
+        cntA--;
+        if(cntA == 0)signal(kazan);
+        signal(mutexA); 
+    }
+
+}
+
+void ljudozderB(){
+
+    while(true){
+
+        wait(entry); 
+        wait(mutexB);
+        cntB++; 
+        if(cntB == 1)wait(kazan); 
+        signal(mutexB); 
+        if(cntfood == 0){
+
+            signal(cook); 
+            wait(canEat); 
+        }
+
+        uzmiporciju();
+        cntfood--; 
+
+        signal(entry); 
+
+        eat(); 
+
+        wait(mutexB); 
+        cntB--;
+        if(cntB == 0)signal(kazan);
+        signal(mutexB); 
+
+
+
+    }
+
+}
+
+void kuvar(){
+    while(true){
+        wait(cook); 
+        pripremihranu(); 
+        cntfood = M;
+        signal(canEat); 
+    }
+}
+
+
+
+
+----------THE BEAR AND THE HONEY BEES PROBLEM --------------
+
+
+Постоји N пчела и један гладан медвед. Они користе
+заједничку кошницу. Кошница је иницијално
+празна, а може да прими H напрстака меда.
+Медвед спава док се кошница не напуни медом,
+када се напуни медом, он поједе сав мед након
+чега се враћа на спавање. Пчелице непрестано
+лете од цвета до цвета и сакупљају мед. Када
+прикупе један напрстак долазе и стављају га у
+кошницу. Она пчела која је попунила кошницу
+буди медведа. Користећи семафоре решити
+проблем.
+
+
+//OVO RESENJE RADI ALI SANJA REKLA DA BEE NE TREBA DA CEKA , ZASTO BI ONA CEKALA KAD MOZE DA IDE OPET DA SKUPLJA MED FEEEEEEEERRRR
+const int H = ...; 
+sem bear = 0; 
+int cnt = 0; 
+sem mutexBees = 1; 
+sem bearFinished = 0;
+
+void bee(){
+    while(true){
+
+        buzz_and_collect_honey(); 
+        wait(mutexBees); 
+        cnt++; 
+        if(cnt == H){
+            signal(bear); 
+            wait(bearFinished); 
+        }
+
+        signal(mutexBees); 
+    }
+}
+void bear(){
+
+
+    while(true){
+        do_something(); 
+        wait(bear); 
+        eatHoney(); 
+        cnt = 0; 
+        signal(bearFinished); 
+
+    }
+}
+
+
+//OVO RESENJE JE VOLJE JER PCELICA NE CEKA NA MEDVEDA NEGO MOZE DA IDE DA SKUPLJA MED OPET 
+
+
+
+
+sem bear = 0; 
+sem mutexBees = 1; 
+const int H = ...; 
+int cnt = 0; 
+
+
+
+void bee(){
+
+    while(true){
+        collect_honey(); 
+        wait(mutexBees); 
+        cnt++; 
+        if(cnt == H){
+            signal(bear); 
+        }
+        else{
+            signal(mutexBees);
+        }
+
+
+
+    }
+}
+
+void bear(){
+
+    while(true){
+
+        do_something(); 
+        wait(bear); 
+        eatHoney(); 
+        cnt = 0; 
+        signal(mutexBees);
+    }
+}
+
+
+Постоји N пчела, један гладан медвед и инспектор кошнице.
+ Кошница може примити H напрстака меда. Важе следећа правила:
+
+Пчеле сакупљају мед и стављају га у кошницу
+Када се кошница напуни, пчела буди медведа
+Медвед неједе одмах — чека да инспектор прегледа кошницу 
+пре него што почне да једе
+Инспектор долази прегледа кошницу само ако је пуна
+
+Пчеле не смеју стављати мед у кошницу док инспектор прегледа 
+или медвед једе
+Медвед после јела сигнализира пчелама да могу поново да пуне кошницу
+Избећи изгладњивање — инспектор не сме чекати заувек
+
+
+//ovde je realizovano kao da svi medvedi koji imaju dovoljno da uzmu mogu paralelno da jedu kod kosnice 
+
+sem mutex = 1; 
+sem full = 0; 
+sem inspectorSem = 0; 
+const int H = ... ; 
+int cnt = 0; 
+sem bear = 0; 
+sem continue = 0;
+
+
+
+void bee(){
+    while(true){
+        collectHoney(); 
+        wait(mutex); 
+        cnt++; 
+        if(cnt == H)
+        {
+            signal(bear); 
+
+        }
+        else signal(mutex); 
+
+    }
+}
+
+
+void inspector(){
+
+    while(true){
+       wait(inspectorSem); 
+       inspect();
+       signal(continue); 
+       
+
+        
+    }
+}
+
+void bear(){
+    while(true){
+        wait(bear); 
+        signal(inspectorSem); 
+        wait(continue);
+        eatHoney(); 
+        cnt = 0; 
+        signal(mutex); 
+    }
+}
+
+Постоји N пчела и M медведа. Кошница може примити H напрстака меда.
+ Важе следећа правила:
+
+Пчеле сакупљају мед и стављају га у кошницу
+Када се кошница напуни, пчела буди све медведе
+Медведиједу из кошнице паралелно — сваки медвед узима тачно P напрстака
+Тек када сви медведи заврше са јелом, пчеле могу поново да пуне кошницу
+Пчеле не смеју стављати мед док медведи једу
+Избећи изгладњивање
+ako nema dovoljno, medvedi se dogovaraju — oni koji ne
+dobiju svoju količinu čekaju sledeći ciklus punjenja.
+
+sem mutexBees = 1; 
+const int H = ...; 
+int cnt  = 0; 
+const int P = ...; 
+const int N = ...; 
+const int M = ...; 
+sem mutexBears = 1; 
+sem door1 = 1; 
+sem door2 = 0; 
+int middlespacecnt = 0; 
+sem bear[M] = {0}; 
+
+
+void bee(){
+
+    while(true){
+        collect(); 
+        wait(mutexBees); 
+        cnt++; 
+        if(cnt == H){
+            for(int i =0; i < M ; i++)signal(bear[i]); 
+        }
+        else signal(mutexBees); 
+
+    }
+}
+
+void bear(int id){
+    while(true){
+        do_something(); 
+        wait(bear[id]); 
+        wait(mutexBears); 
+        if(cnt >= P){
+            cnt -= P; 
+            signal(mutexBears); 
+            eatHoney();
+        }
+        else signal(mutexBears);
+
+        //treba neka barijera da bi pcele mogle da krenu tek kada svi medvedi zavrse
+        barrier(); 
+
+    }
+}
+
+void barrier(){
+    wait(door1); 
+    middlespacecnt++;
+     if(middlespacecnt == M)//M = broj medveda 
+     {
+        signal(door2); 
+     }
+     else{
+        signal(door1); 
+     }
+
+     wait(door2); 
+     middlespacecnt--; 
+     if(middlespacecnt == 0){
+        signal(door1); 
+        signal(mutexBees); 
+     }
+     else signal(door2); 
+}
+
+
+---------------THE HUNGRY BIRDS PROBLEM----------
+
+
+У гнезду живи n птића и две родитељске птице (The
+Hungry Birds Problem). Птићи једу из заједничке
+посуде која прима F црвића. Сваки птић
+непрекидно једе из посуде по једног црвића, мало
+спава и поново се враћа да једе. Када посуда
+постане празна, птић који је испразнио посуду
+буди једног од родитеља. Родитељска птица може
+да крене у лов на црвиће само уколико у гнезду
+остане други родитељ. Из лова се родитељ враћа
+тек када накупи F црвића које сипа у посуду.
+Родитељске птице осим тога што чувају птиће и
+иду у лов могу да напусте гнездо да би саме јеле,
+тако да у гнезду увек остане један родитељ.
+Користећи семафоре написати програм који
+симулира понашање птића и родитеља
+
+
+sem mutexBaby = 0; 
+const int F = ...; 
+int cnt = 0; 
+sem canLeave = 1; 
+sem needfood = 1; 
+
+
+void baby(){
+
+    while(true){
+        sleep(rand()); 
+        wait(mutexBaby); 
+        cnt--; 
+        if(cnt == 0)
+        {
+            //prazna cinija
+            signal(needfood); 
+            
+        }else{
+            signal(mutexBaby); 
+        }
+
+
+        
+        eat(); 
+
+    }
+}
+
+
+void parent(){
+    while(true){
+        int c = round(rand()); 
+        if(c == 0)//skupi hranu za bebe
+        {
+            wait(needfood); 
+            wait(canLeave);
+            collectworms(); 
+            cnt = F; 
+            signal(canLeave);
+            signal(mutexBaby); 
+        }
+        else{
+            wait(canLeave);
+            hunt_for_yourself(); 
+            eat();
+            signal(canLeave); 
+        }
+    }
+}
+
+
+
+У гнезду живи N птића и две родитељске птице. 
+Птићиједу из заједничке посуде која прима F црвића. Важе следећа правила:
+
+Сваки птићједе поједног црвића, спава и враћа се
+Посуда има два одељка — одељак А и одељак Б, сваки капацитета F/2 црвића
+Птићи прво једу из одељка А, тек када је А празан прелазе на Б
+Када се испразни одељак А, буди се родитељ да напуни само А
+Када се испразни одељак Б, буди се родитељ да напуни само Б
+У гнезду увек мора остати један родитељ
+Родитељи не смеју пунити исти одељак истовремено
+
+//cini mi se da je ovo ispravno resenje jedino 
+// stoje specificno je da ako su prazni i a i b u
+//  nekom trenutku onda mora da se napune obe cinije istovremeno 
+
+sem mutexBaby = 1; 
+int cntA = 0; 
+int cntB = 0; 
+const int F = ...; 
+sem canLeave = 1; 
+sem needFood = 0; 
+bool needA = true; 
+bool needB = true; 
+sem shared = 1;
+sem mutexB = 0; 
+bool tookB = false;
+sem food = 0; 
+
+
+void baby(){
+    while(true){
+        sleep(rand()); 
+        wait(mutexBaby); 
+        wait(shared);
+        tookB = false;
+        while(cntA == 0){
+            needA = true; 
+            signal(needFood);
+           
+            if(cntB == 0)
+            {
+                needB = true;
+                signal(needFood); 
+                signal(shared); 
+                wait(food);
+                wait(shared); 
+            }
+            else{
+                cntB--; 
+                tookB = true;
+                break; 
+            }
+
+               
+        }
+        if(!tookB)cntA--; 
+
+       signal(mutexBaby); 
+        signal(shared);
+
+        eat(); 
+        
+    }
+}
+
+
+void parent(){
+    while(true)
+    {
+        wait(canLeave); 
+        wait(needFood); 
+        hunt();
+        wait(shared);
+        if(needA)
+        {
+            cntA = F/2; 
+            needA = false;
+            
+        }
+        else{
+           
+            cntB = F/2; 
+            needB = false;
+            signal(food);
+        }
+        
+        signal(shared); 
+
+        
+        signal(canLeave); 
+    }
+}
+
+У гнезду живи N птића и две родитељске птице. 
+Птићи једу из заједничке посуде која прима F црвића. 
+Важе следећа правила:
+
+Сваки птић непрекидно једе поједног црвића, спава и враћа се
+Птићи једу групно — птић не сме јести сам, мора сачекати 
+да се скупи најмање K птића пре него што почну да једу
+Када се скупи K птића, свиједу истовремено
+KAO PRVI CRVIC KAD NEMA DOVOLJNO zove roditelja npr
+Родитељ може ићи у лов само ако остане други родитељ у гнезду
+Родитељ пуни посуду са F црвића
+
+F % K != 0 može biti — tada poslednja grupa koja dođe mora 
+čekati roditelja jer nema dovoljno crva. Teže ali zanimljivije.
+
+//PROVERI
+
+
+const int K = ...;
+int cnt = 0; 
+
+int cntBaby = 0; 
+sem shared = 1; 
+sem door1 = 1; 
+sem door2 = 0; 
+sem parent = 0; 
+sem food = 0; 
+sem canLeave = 1;
+int waiting = 0;  
+
+
+
+void baby(){
+    while(true){
+        sleep(rand()); 
+        wait(shared);
+        
+        if(cntbaby == 0 && cnt < K){
+            //pozovi roditelja da ti treba jos
+            waiting++; 
+            signal(parent); 
+            signal(shared); 
+            wait(food); 
+            wait(shared); 
+             
+        }
+         
+        
+        barrier();  
+
+        cnt--; 
+        signal(shared);
+
+        eat(); 
+
+    }
+}
+
+
+void parent(){
+    while(true)
+    {
+        
+        wait(canLeave); 
+        wait(parent); 
+        hunt(); 
+        wait(shared)
+        
+        cnt = F; 
+        for(int i = 0; i < waiting ; i++)signal(food);
+        waiting =  0; 
+        signal(canLeave);
+        signal(shared);  
+    }
+}
+
+
+void barrier()
+{
+
+  
+    wait(door1); 
+    cntBaby++; 
+    if(cntBaby == K)
+    {
+        signal(door2); 
+    }
+    else {
+        signal(door1); 
+    }
+
+    signal(shared); 
+    wait(door2); 
+    wait(shared); 
+    cntBaby--; 
+    if(cntBaby == 0)
+    {
+        signal(door1);
+        
+    }
+    else{
+        signal(door2); 
+    }
+    
+}
+
+
+
+
+---------------------------BARIJERA---------------------------
+
+
+Разматра се проблем синхронизације на баријери
+(Barrier Synchronization). Синхронизациона
+баријера омогућава нитима да на њој сачекају док
+тачно N нити не достигне одређену тачку у
+извршавању, пре него што било која од тих нити
+не настави са својим извршавањем. Користећи
+семафоре решити овај проблем. Омогућити да се
+иста баријера може користити већи број пута.
+
+
+sem door1 = 1; 
+sem door2 = 0; 
+int cnt = 0; 
+
+
+void barrier(){
+
+    wait(door1); 
+    cnt++; 
+    if(cnt == N)
+    {
+        signal(door2); 
+    }
+    else{
+        signal(door1); 
+    }
+
+    wait(door2); 
+    cnt--; 
+    if(cnt == 0)
+    {
+        signal(door1); 
+    }
+    else{
+        signal(door2); 
+    }
+
+
+}
+
+
+
+
+---------------------H2O PROBLEM------------------
+
+
+Постоје два типа атома, водоник и кисеоник, који
+долазе до баријере. Да би се формирао молекул
+воде потребно је да се на баријери у истом
+тренутку нађу два атома водоника и један атом
+кисеоника. Уколико атом кисеоника дође до
+баријере на којој не чекају два атома водоника,
+онда он чека да се они сакупе. Уколико атом
+водоника дође до баријере на којој се не налазе
+један кисеоник и један водоник, он чека на њих.
+Баријеру треба да напусте два атома водоника и
+један атом кисеоника. Користећи семафоре
+написати програм који симулира понашање
+водоника и кисеоника. 
+
+sem hSem = 2; 
+sem oSem = 1; 
+int hCnt = 0; 
+int oCnt = 0;
+sem shared = 1;
+sem H[2] = {0}; 
+sem O = 0; 
+
+
+
+void hydrogen(int id){
+
+    int waitIndex; //ovo je lokalna pa nema potrebe za zakljucavanjem 
+    wait(hSem); 
+    wait(shared); 
+    waitIndex = hCnt; 
+    hCnt++; 
+   
+    if(hCnt == 2 && oCnt > 0)
+    {
+        hCnt = 0; 
+        oCnt = 0; 
+        //stigli svi 
+        signal(H[0]) 
+        signal(O); 
+        signal(shared);
+        
+    }
+    else{
+        signal(shared); 
+        wait(H[waitIndex]); 
+    }
+    
+
+    bind(id);
+    
+     
+    signal(hSem); 
+
+
+}
+
+void oxygen(int id){
+    wait(oSem); 
+    wait(shared); 
+    oCnt++; 
+    if(hCnt == 2)
+    {
+     
+        hCnt = 0; 
+        oCnt = 0; 
+        signal(H[0]); 
+        signal(H[1]); 
+        signal(shared); 
+        
+    }
+    else{
+        signal(shared);
+        wait(O); 
+    }
+    bind(id);
+    
+    signal(oSem); 
+    
+}
+
+
+
+
+------------------resenje 2 ----------------
+//ovo je gore resenje jer dozvoljava mesanje ne mora onaj o molekul koji je prvi dosao da prvi udje u bind, moje resenje je bolje 
+
+
+
+sem hSem = 0; 
+sem oSem = 0; 
+int h = 0, o = 0; 
+sem mutex = 1; 
+sem hOk = 0, oOk = 0; 
+
+
+void oxygen(int id)
+{
+    wait(mutex);
+    o++;
+    if(h >= 2)
+    {
+        o--; 
+        h--;
+        h--;
+        
+        signal(hSem); 
+        wait(hOk); 
+        signal(hSem); 
+        wait(hOk); 
+        
+        bind(id); 
+        signal(mutex); 
+    }
+    else{
+        
+        signal(mutex); 
+        wait(oSem);
+        bind(id); 
+        signal(oOk); 
+    }
+    
+}
+
+
+void hydrogen(int id){
+    wait(mutex); 
+    h++; 
+    if(h >= 2 && o > 0)
+    {
+        h--; 
+        h--; 
+        o--;
+        signal(hSem); 
+        wait(hOk); 
+        signal(oSem); 
+        wait(oOk); 
+        bind(id);
+        signal(mutex); 
+        
+    }
+    else{
+        signal(mutex); 
+        wait(hSem); 
+        bind(id); 
+        signal(hOk);
+    }
+}
+
+
+
+
+---------resenje 3 koriscenjem barijere----------
+
+
+sem oSem = 1; 
+sem hSem = 2;
+sem mutex = 1; 
+sem door1 = 1; 
+sem door2 = 0; 
+int cnt = 0; 
+
+
+void hidrogen(int id){
+    wait(hSem); 
+    barrier(); 
+    bind(id); 
+    signal(hSem);  
+    
+}
+
+void oxygen(int id)
+{
+    wait(oSem); 
+    barrier(); 
+    bind(id); 
+    signal(oSem); 
+}
+
+
+
+void barrier()
+{
+    wait(door1); 
+    cnt++; 
+    if(cnt == 3)
+    {
+        signal(door2); 
+    }
+    else{
+        signal(door1); 
+    }
+
+    wait(door2); 
+    cnt--; 
+    if(cnt == 0)
+    {
+        signal(door1); 
+    }
+    else signal(door2); 
+}
+
+
+------varijacija H2O problema-------------
+
+Постоје три типа атома — водоник (H),
+ кисеоник (O) и азот (N). Да би се формирали молекули потребно је:
+
+Молекул воде: 2H + 1O
+Молекул азот-оксида: 1N + 1O
+
+Атоми долазе до баријере и чекају.
+ Када се скупи довољно атома за било који молекул, 
+ они се везују и напуштају баријеру. Ако атом може учествовати
+ у оба молекула (нпр. кисеоник), он се везује за онај молекул 
+ чији су атоми први спремни.
+//pitaj nekog da proveri da li je dobro resenje ovooooooooooooooooooooooooooooooooooooooooooooooooooo
+
+ sem hSem = 2; 
+ sem nSem = 1; 
+ sem oSem = 1; 
+ int cntH20 = 0; 
+ int cntNO = 0; 
+ int n = 0; 
+ int h = 0;  
+ sem door1h20 = 1; 
+ sem door220 = 0; 
+ sem door1no = 1; 
+ sem door2no = 0; 
+ sem ready = 0; 
+ bool goH2o = false; 
+ bool goNo = false; 
+ sem entry = 1; 
+ sem hOk = 0; 
+ sem nOk = 0; 
+
+
+
+ void oxygen(int id)
+ {
+    wait(oSem); 
+    wait(ready); 
+    if(goH2o)
+    {
+        
+        barrierH2o();
+        wait(hOk); 
+        wait(hOk); 
+    }
+    else{
+        barrierno(); 
+        wait(nOk); 
+    }
+    bind(id); 
+    signal(oSem); 
+ }
+
+ void hydrogen(int id)
+ {
+    wait(hSem); 
+    barrierh2o(); 
+    bind(id); 
+    signal(hOk); 
+    signal(hSem); 
+ }
+
+ void N(int id)
+ {
+    wait(nSem); 
+    barrierno(); 
+    bind(id); 
+    signal(nOk); 
+    signal(nSem);
+ }
+
+
+ void barrierh20()
+ {
+
+    wait(door1h2o); 
+    cnth2o++; 
+    if(cnth2o == 2)
+    {
+        wait(entry); 
+        goH2o = true; 
+        signal(ready); 
+    }
+
+    if(cnth2o == 3)
+    {
+        signal(door2h2o); 
+        signal(entry); 
+    }
+    else{
+        signal(door1h2o)
+    }
+
+    wait(door2h2o); 
+    cnth2o--; 
+    if(cnth2o == 0)
+    {
+        goH2o = false;
+        signal(door1h2o); 
+    }
+    else signal(door2h2o); 
+    
+
+ }
+ void barrierno()
+ {
+
+    wait(door1no); 
+    cntno++; 
+    if(cntno  == 1)
+    {
+        wait(entry); 
+        goNo = true; 
+        signal(ready); 
+    }
+    if(cntno == 2)
+    {
+        signal(entry); 
+        signal(door2no); 
+    }
+    else{
+        signal(door1no); 
+    }
+
+    wait(door2no); 
+    cntno--; 
+    if(cntno== 0)
+    {
+        goNo = false;
+        signal(door1no); 
+    }
+    else signal(door2no); 
+    
+
+ }
+
+
+
+ ---------------THE CHILD CARE PROBLEM--------------
+ У неком забавишту постоји правило које каже да се
+на свака три детета мора наћи барем једна
+васпитачица. Родитељ доводи једно или више
+деце у забавиште. Уколико има места оставља их,
+уколико не одводи их. Васпитачица сме да
+напусти забавиште само уколико то не нарушава
+правило. Написати процедуре, користећи
+семафоре, за родитеље који доводе и одводе
+децу и васпитачице и иницијализовати почетне
+услове.
+
+int cntv = 0; 
+int cntd = 0; 
+sem mutex = 1; 
+int waitingV = 0;
+sem canLeave = 0; 
+
+
+
+void dovediDecu(int br)
+{
+    wait(mutex); 
+    if(cntv * 3 <= cntd + br)
+    {
+        //moze da ih ostavi 
+        cntd += br; 
+        signal(mutex); 
+    }
+    else{
+        signal(mutex); 
+    }
+
+}
+
+void odvediDecu(int br)
+{
+    wait(mutex); 
+    if(br <= cntd)
+    {
+        //moze da odvede
+        cntd -= br; 
+
+    }
+    while((cntv - 1) * 3 >= cntd && waitingv > 0)
+    {
+            cntv--; 
+            waitingV--; 
+            signal(canLeave);
+    }
+    signal(mutex); 
+}
+
+
+void vaspitacicaDolazi()
+{
+    wait(mutex); 
+    cntv++; 
+    
+    if(waitingV > 0){
+        waitingV--;
+        cntv--; 
+        signal(canLeave); 
+    }
+    signal(mutex); 
+
+}
+
+void vaspitacicaOdlazi(){
+    wait(mutex); 
+    if((cntv - 1) * 3 >= cntd)
+    {
+        //moze da ode 
+        cntv--; 
+        signal(mutex);
+    }
+    else{
+        waitingV++;
+        signal(mutex); 
+        wait(canLeave);
+    }
+}
+
+
+
+
+
+
+----------------varijacija roditelj mora da ceka da ostavi decu ako trenutno nema mesta za njih---------------
+
+//uradiiiiii ponoovooooooooo
+
+
+int brd = 0; 
+int brv = 0; 
+sem mutex = 1; 
+sem canLeave = 0; 
+sem parent = 1; 
+sem LeaveChildren = 0;
+int waitingchildren = 0;
+
+
+void vaspitacicaDolazi()
+{
+    wait(mutex); 
+    brv++; 
+    if(waitingchildren > 0 && brd + waitingchildren <= brv * 3)
+    {
+        waitingchildren = 0;---------------------
+        signal(leaveChildren);
+    }
+    else if(waitingv > 0 && (brv - 1) * 3 >= brd)
+    {
+        
+        signal(canLeave); 
+    }
+    signal(mutex); 
+}
+
+void vaspitacicaOdlazi()
+{
+    wait(mutex); 
+    if((brv - 1) * 3 >= brd)
+    {
+        brv--; 
+        signal(mutex);
+
+    }
+    else{
+        waitingv++; 
+        signal(mutex);
+        wait(canLeave);  
+        waitingv--; 
+    } 
+}
+
+void dovediDecu(int br)
+{
+    wait(parent); 
+    wait(mutex); 
+    while(brd + br > (brv) * 3)
+    {
+        //nema dovoljno mesta mora da ceka 
+        waitingchildren = br; 
+        signal(mutex); 
+        wait(leaveChildren);
+        wait(mutex);
+        waitingChildren = 0;
+    }
+    brd += br; 
+    signal(mutex); 
+    signal(parent); 
+    
+}
+
+void odvediDecu(int br)
+{
+    wait(mutex); 
+    
+        //mozes da odneses decu
+     brd-=br; 
+     if(waitingchildren > 0 && brd + waitingchildren <= brv * 3)
+    {
+        
+        signal(leaveChildren);
+    }
+    else if(waitingv > 0 && (brv - 1) * 3 >= brd)
+    {
+        
+        signal(canLeave); 
+    }
+        
+    
+    
+    signal(mutex); 
+}
+
+
+
+----------------------------------ROKOVI ZADACI-------------------
+
+
+----------------JANUAR 2020------------------
+
+Користећи семафоре написати програм који решава проблем путовања лифтом.
+ Путник позива лифт са произвољног спрата. Када лифт стигне на неки спрат
+  сви путници који 
+су изразили жељу да сиђу на том спрату обавезно изађу.
+ Након изласка путника сви путници који су чекали на улазак уђу
+  у лифт и кажу на који спрат желе да пређу. Тек када се сви изјасне
+   лифт прелази даље. Лифт редом обилази спратове и стаје само на оне
+    где има путника који улазе или излазе. Може се претпоставити д
+    а постоји N спратова.
+
+
+
+
+
+
+
+
+    //PONOVOOO SA SI WIKIJAAAAAAAAAAA
+
+
+sem ulazi[N]={0}
+int ulaziCount[N] = {0}
+int ulaziCountCopy[N] = {0}
+int izlaziCount[N] = {0}
+sem izlazi[N] = {0}
+sem door1 = 1; 
+sem door2 = 0; 
+int trenutniSprat = 0;
+int smer = 1;
+int cntb = 0;
+
+
+sem mutex[N] = {1}; 
+
+
+
+void person()
+{
+    int sprat_na_kome_sam = round(rand() * N);
+    wait(mutex[sprat_na_kome_sam]);
+    ulaziCount[sprat_na_kome_sam]++;
+    signal(mutex[sprat_na_kome_sam]);
+
+    
+    while(true)
+    {
+        //cekaj da udjes u lift
+        -wait(ulazi[sprat_na_kome_sam])
+        //usla u lift
+        int idem_na_sprat = odluci_sprat()
+        wait(mutex[idem_na_sprat]);
+        izlaziCount[idem_na_sprat]++;
+        signal(mutex[idem_na_sprat]); 
+        
+        //barijera da mora da se saceka da svi izaberu sprat koji su usli na taj sprat
+        -barrier();
+        wait(izlazi[idem_na_sprat]);
+
+        
+       sprat_na_kome_sam = idem_na_sprat;
+       wait(mutex[sprat_na_kome_sam]);
+       ulaziCount[sprat_na_kome_sam]++;
+       signal(mutex[sprat_na_kome_sam]);
+        
+    }
+
+    
+}
+
+void lift(){
+    while(true)
+    {
+        if(trenutniSprat == N)
+        {
+            smer = -1;
+        }
+        else if(trenutniSprat == 1)
+        {
+            smer = 1;
+        }
+        trenutniSprat+=smer;
+
+        wait(mutex[trenutniSprat]);
+        if(izlaziCount[trenutniSprat] > 0)
+        {
+            //neko hoce da sidje 
+            for(int i = 0; i < izlaziCount[trenutniSprat]; i++)
+            {
+                signal(izlazi[trenutniSprat]);
+            }
+            izlaziCount[trenutniSprat] = 0; 
+            
+        }
+        
+        
+        if(ulaziCount[trenutniSprat] > 0)
+        {
+            //ima neko ko hoce da udje 
+            for(int i = 0; i < ulaziCount[trenutniSprat]; i++)
+            {
+                signal(ulazi[trenutniSprat]);
+                
+            }
+            ulaziCountCopy[trenutniSprat] = ulaziCount[trenutniSprat]
+            ulaziCount[trenutniSprat]=0;
+            signal(mutex[trenutniSprat]);
+            barrier();
+            
+        }
+        else signal(mutex[trenutniSprat]);
+        
+        
+    }
+}
+
+void barrier(){
+
+    wait(door1); 
+    cntb++; 
+    if(ulaziCountCopy[trenutniSprat] + 1 == cntb)
+    {
+        signal(door2); 
+    }
+    else signal(door1); 
+
+    wait(door2); 
+
+    cntb--; 
+    if(cntb == 0)
+    {
+        signal(door1);
+        
+    }
+    else signal(door2); 
+}
+
+
+
+-------------resenje sa Si wiki------------
+
+
+struct Floor{
+    list<sem> peopleEntering; 
+    sem mutexEntering = 1;
+    list <sem> peopleExiting; 
+    sem mutexExiting = 1;
+}
+
+
+const int N = ...; 
+Floor floors[N]; 
+sem liftSem = 0; 
+
+
+void person(){
+    sem personSem = 0; 
+    int currentFloorIndex = rand() % N; 
+    while(true){
+        int nextFloorIndex = rand() % N; 
+        Floor currentFloor = floors[currentFloorIndex]; 
+        Floor nextFloor = floors[nextFloorindex]; 
+        wait(currentFloor.mutexEntering); 
+        currentFloor.peopleEntering.push_back(personSem); 
+        signal(currentFloor.mutexEntering)
+
+        wait(personSem); 
+        //usao u lift 
+
+        wait(nextFloor.mutexExiting)
+        nextFloor.mutexExiting.push_back(personSem);
+        signal(nextFloor.mutexExiting); 
+
+        signal(liftSem); 
+        wait(personSem); 
+        //izlazimo iz lifta
+
+        liftSem.signal(); 
+    }
+}
+
+
+void lift(){
+    int currentFloorIndex = 0; 
+    bool up = true; 
+    while(true)
+    {
+        if(up)
+        {
+            if(++currentFloor == N - 1)
+            {
+                up = false;
+            }
+        }
+        else{
+            if(--currentFloor == 0)
+            {
+                up = true
+            }
+        }
+
+        Floor floor = floors[currentFloor]; 
+        wait(floor.mutexEntering); 
+        if(floor.peopleExiting.size() == 0 && floor.peopleExiting.size() == 0) 
+        {
+            //ne stajemo na ovom spratu
+            signal(floor.peopleEntering); 
+            continue;
+        }
+        int numExiting = floor.peopleExiting.size()
+        for(int i = 0; i < numExiting; i++){
+            sem personsem = floor.peopleExiting.pop_front(); 
+            signal(personsem)
+        }
+         for(int i = 0; i < numExiting; i++)
+        {
+            wait(liftSem); 
+        }
+
+        int numEntering = floor.peopleEntering.size(); 
+        for(int i = 0; i < numEntering; i++)
+        {
+            sem personsem = floor.peopleEntering.pop_front(); 
+            signal(personsem);
+        }
+
+        for(int i = 0; i < numEntering; i++)
+        {
+            wait(liftSem); 
+        }
+
+        floor.mutexEntering.signal(); 
+    
+
+    }
+}
+
+
+
+--------------JANUAR 2021-----------------
+
+const int N = ...; //maksimalni broj niti
+
+class Timer {
+
+
+    sem privatnisemafori[N] = {0}; 
+    int timeLeft[N] = {0}; 
+    bool sleeping[N] ={false};
+    sem mutex = 1;
+
+    void wakeme(int id, int n)
+    {
+
+        wait(mutex); 
+        sleeping[id] = true; 
+        timeLeft[i] = n;
+        signal(mutex);
+        wait(privatnisemafor[id]); 
+
+
+    }
+
+
+    void tick()
+    {
+        wait(mutex)
+        for(int i = 0; i < N; i++)
+        {
+            if(sleeping[i])
+            {
+                timeLeft[i]--; 
+                if(timeLeft[i] == 0)
+                {
+                    sleeping[i] = false;
+                    signal(privatnisemafor[i]);
+                }
+            }
+        }
+        signal(mutex); 
+    }
+}
+
+
+
+//tehnikom stafetne palice
+
+
+typedef struct element{
+    sem sem; 
+    int remain; 
+}
+
+sem mutex = 1;
+ordered_list<element> niz; 
+
+
+void wakeme(int n. sem mysem)
+{
+    element el; 
+    el.sem = mysem; 
+    el.remain = n; 
+    wait(mutex); 
+    if(n > 0){//kada se blokiram
+        niz.add_ordered(el); 
+        signal(mutex); 
+        wait(mysem); 
+
+    }
+    else{
+        signal(mutex); 
+        return; 
+    }
+    //pustena nit, da li ona moze da pusti jos nekoga 
+
+    if(niz.front().remain == 0)
+    {
+        signal(niz.pop().sem); 
+    }
+    else{
+        signal(mutex); 
+    }
+
+}
+
+
+void tick()
+{
+    wait(mutex); 
+    for(int i = 0; i < niz.size(); i++)
+    {
+        niz[i].remain--;
+    }
+    if(niz.front().remain == 0)
+    {
+        signal(niz.pop().sem); 
+    }
+    else signal(mutex)
+}
+
+
+
+
+
+
+---------------JANUAR 2022-------------------
+
+
+
+
+
+
+
+
+
+-------------JANUAR 2023 ------------
+Имплементирати и објасните основну разлику и разлоге 
+за постојање те разлике између имплементација бафера коначног 
+капацитета (bounded buffer) за случајеве 1 произвођач и 1 потрошач, 
+као и M произвођача и N потрошача помоћу семафора. У складу са
+ објашњењем, прикажите разлике и за случајеве M произвођача и 1 
+ потрошач, као и 1 произвођач и N потрошача.        
+
+
+const int B = ....; 
+int buffer[B]; 
+int head = 0; 
+int tail = 0; 
+sem itemAvailable = 0; 
+sem spaceAvailable = B; 
+
+
+ -----verzija sa 1 producer i 1 consumer---------
+
+
+ void producer(){
+    while(true)
+    {
+        int element = make_element(); 
+        wait(spaceAvailable); 
+        buffer[tail] = element; 
+        tail = (tail + 1) mod b;
+        signal(itemAvailable); 
+
+
+    }
+ }
+
+ void consumer(){
+    while(true)
+    {
+        wait(itemAvailable); 
+        int el = buffer[head]; 
+        head = (head + 1) mod B 
+        signal(spaceAvailable)
+        consume(el); 
+    }
+ }
+
+
+ ---- a sad kad ih ima vise i p i c ------------
+
+ sem mutexC = 1; 
+ sem mutexP = 1;
+
+  void producer(){
+    while(true)
+    {
+        int element = make_element(); 
+
+        wait(spaceAvailable); 
+        wait(mutexP); 
+        buffer[tail] = element; 
+        tail = (tail + 1) mod b;
+        wait(mutexP); 
+        signal(itemAvailable); 
+
+
+    }
+ }
+
+ void consumer(){
+    while(true)
+    {
+        wait(itemAvailable); 
+        wait(mutexC); 
+        int el = buffer[head]; 
+        head = (head + 1) mod B 
+        signal(mutexC); 
+        signal(spaceAvailable)
+        consume(el); 
+    }
+ }
+
+ odgovor: consmer i producer medjusobno nikad nece da se preplic, ali vise producera i vise consumera medjusobno mogu i zato je jedina promena u odnosu na to kad ih ima 1 i kad ih im vise je to sto moramo
+ da dodamo i mutex tako da samo jedan producer i jedan consumer moze da raid istovremeno 
+
+
+
+
+ ------------JUN 2022------------
+
+
+ Постоје три особе међу којима
+  треба изабрати једну (The Odd Person Wins Game). 
+  Свака од тих особа поседује новчић који има две стране. 
+  Избор особе се одиграва тако што свака особа независно баца
+   свој новчић. Уколико постоји особа којој је новчић пао на другу 
+   страну у односу на преостале особе, онда се та особа изабира.
+    Уколико све особе имају исто постављен новчић, поступак се понавља
+     све док се не изабере једна. Особе након сваког бацања морају да 
+     знају да ли су изабране или не или се поступак понавља. Користећи 
+     семафоре написати програм који описује понашање особе. Ниједној 
+     особи не треба давати предност на основу њиховог идентификатора.
+
+sem door1 = 1; 
+sem door2 = 0; 
+int cnt = 0; 
+int dobijeno[3];
+
+void osoba(int id)
+{
+    while(true)
+    {
+        int dobio= rand(); 
+        dobijeno[id] = dobio; 
+        barrier(); 
+        //svi su bacili i dobili nesto i sad im ispisujemo ko je pobedio ko nije 
+        if(dobijeno[0] == dobijeno[1]==dobijeno[2])
+        {
+            //svi su isti
+            print("ponavlja se bacanje"); 
+            continue; 
+        }
+        if(dobijeno[0] == dobijeno[1])
+        {
+            if(id == 2)
+            {
+                print("pobedio si"); 
+            }
+            else print("izgubio si"); 
+        }
+        else if(dobijeno[0] == dobijeno[2])
+        {
+             if(id == 1)
+            {
+                print("pobedio si"); 
+            }
+            else print("izgubio si"); 
+        }
+        else{
+             if(id == 0)
+            {
+                print("pobedio si"); 
+            }
+            else print("izgubio si"); 
+        }
+
+        //ova barijera sluzi da se ceka da se svima ispise sta treba da se ne bi promenilo ono
+        barrier()
+    }
+}
+
+
+void barrier()
+{
+
+    wait(door1); 
+    cnt++; 
+    if(cnt == 3)
+    {
+        signal(door2); 
+    }
+    wait(door2); 
+    cnt--; 
+    if(cnt == 0)
+    {
+        signal(door1);
+    }
+    else{
+        signal(door2); 
+    }
+
+}
+
+
+----------------------k 2019-------------------------
+Решити проблем читалаца и писаца (Reader Writers Problem)
+ користећи семафоре. Обезбедити да процеси започињу приступ ресурсу 
+ по редоследу слања захтева. Претпоставити да у неком тренутку максимално
+  N процеса може упутити захтев за приступ ресурсу.
+
+
+
+typedef struct Slot{
+    char type; 
+    sem semaphore; 
+}
+const int N = ...; 
+
+int r = 0, w = 0; 
+Slot waiting[N]; 
+waiting[0].semaphore = 1; 
+int head = 0; 
+int tail = 0; 
+int count = 0; 
+sem spaceAvailable = N; 
+ 
+
+
+
+
+void reader()
+{
+    wait(spaceAvailable);
+    wait(mutex);
+    int id = tail; 
+    tail = (tail + 1) mod N ; 
+    count++; 
+    signal(mutex);
+    waiting[id].type = 'r'
+    wait(waiting[id].semaphore); 
+
+    wait(mutex); 
+    r++;
+    head = (head + 1) mod N;
+    count--;
+    signal(spaceAvailable) 
+
+   if(count > 0)
+    {
+        if(waiting[head].type == 'r')
+        {
+            signal(waiting[head].semaphore); 
+        } 
+    }
+
+    signal(mutex); 
+
+    
+    read(); 
+
+    //zavrsio je citanje
+    wait(mutex); 
+    r--;
+    if(count > 0 && r == 0)//!!!!!!!!!
+    {
+        signal(waiting[head].semaphore); 
+         
+    }
+    signal(mutex); 
+    
+    }
+    
+}
+
+void writer(){
+    wait(spaceAvailable)
+    wait(mutex); 
+    id = tail;  
+    tail = (tail + 1)mod n
+    count++;
+    signal(mutex); 
+    waiting[id].type='w'
+    wait(waiting[id].semaphore); 
+
+
+    wait(mutex); 
+    head = (head + 1)mod N; 
+    count--;
+    signal(spaceAvailable); 
+    signal(mutex); 
+
+    write(); 
+
+    //zavrseno pisanje
+    wait(mutex)
+    if(count > 0)//!!!!!!!!!!!
+    {
+        signal(waiting[head].semaphore)
+        
+
+    }
+    signal(mutex); 
+    
+    
+}
+
+
+
+----------------------K1 2018 ---------------------
+Потребно је урадити синхронизацију на баријери 
+која функционише на следећи начин: постоје два 
+процеса координатора за по половину радних процеса
+ (претпоставити паран број радних процеса) који треба да
+  се синхронизују на баријери. Притом, та два процеса координатора прво закључују када су 
+  сви њихови процеси стигли до њихових интерних подбаријера и кроз поступак међусобне комуникације
+   координатора утврђују када су сви радни процеси стигли до еквивалентне јединствене баријере. 
+   Након тога оба процеса координатора треба да дозволе радним процесима да прођу баријеру. 
+   Написати кôд радних процеса и оба процеса координатора.
+
+boolean coordinator = false; 
+sem coord = 0; 
+sem arrived[N] = {0}; 
+sem pass[N] = {0}; 
+const int N = ...; 
+sem mutex = 1; 
+
+
+void coordinator1(){
+
+    for(int i = 0; i < N/2; i++)
+    {
+        arrived[i].wait(); 
+    }
+
+    //dosli svi znaci prosli svi prvu barijeru
+
+    wait(mutex)
+    
+        if(coordinator == false)//ovi su prvvi dosli 
+        {
+            coordinator = true; 
+            signal(mutex); 
+            coord.wait();
+        }
+        else {
+            coordinator = false; 
+            coord.signal(); 
+            signal(mutex); 
+
+        }
+
+ 
+    for(int i = 0; i < N/2; i++)
+    {
+        pass[i].wait(); 
+    }
+}
+void coordinator2(){
+     for(int i = N/2; i < n; i++)
+    {
+        arrived[i].wait(); 
+    }
+
+    //dosli svi znaci prosli svi prvu barijeru
+
+    wait(mutex)
+    
+        if(coordinator == false)//ovi su prvvi dosli 
+        {
+            coordinator = true; 
+            coord.wait();
+        }
+        else {
+            coordinator = false; 
+            coord.signal(); 
+
+        }
+
+    signal(mutex); 
+    for(int i = N/2; i < N; i++)
+    {
+        pass[i].wait(); 
+    }
+}
+
+void workerProcess(int id){
+    work(); 
+    arrive[id].signal(); 
+    pass[id].wait(); 
+
+    //.....
+    
+}
+
+
+
+Негде у Африци постоји дубок кањон на чијим литицама живе бабуни (The Baboons Crossing Problem). 
+Између две литице кањона постоји лијана преко које бабуни прелазе реку.
+ Да би се избегао сукоб између бабуна у једном тренутку на лијани смеју да се нађу само бабуни који припадају једној страни кањона. 
+ Такође, лијана може да издржи највише 5 бабуна, иначе пуца. Користећи семафоре написати програм за бабуне са обе стране кањона.
+
+
+ sem canHold = 5; 
+ sem mutex = 0 
+ int cntfromleft = 0; 
+ int cntfromright = 0;
+ sem entry = 1; 
+ sem rope = 1; 
+ bool fromright = false; 
+
+
+
+
+ void baboonFromLeft(){
+
+
+    wait(entry);
+    wait(mutex); 
+    cntfromleft++; 
+    if(cntfromleft == 1)
+    {
+        signal(mutex); 
+        wait(rope); 
+    }
+    else{
+        wait(canHold); 
+
+    }
+    signal(entry); 
+
+
+    cross(); 
+
+    wait(mutex); 
+    cntfromleft--; 
+    if(cntfromleft == 0)
+    {
+        signal(rope); 
+    }
+    signal(canHold); 
+    signal(mutex); 
+    
+
+ }
+
+
+ void baboonFromRight(){
+
+    wait(entry);
+    wait(mutex); 
+    cntfromright++; 
+    if(cntfromright == 1)
+    {
+        signal(mutex); 
+        wait(rope); 
+    }
+    else{
+        wait(canHold); 
+
+    }
+    signal(entry); 
+
+
+    cross(); 
+
+    wait(mutex); 
+    cntfromright--; 
+    if(cntfromright == 0)
+    {
+        signal(rope); 
+    }
+    signal(canHold); 
+    signal(mutex); 
+ }
+
+
+
+
+ -------------------------------------K1 2020----------------------------------
+
+ Посматра се један паркинг. Постоји само једна рампа која служи и за улаз на паркинг
+ , и за излаз са паркинга, кроз коју може пролазити само један аутомобил 
+ \у једном тренутку. На паркингу има N места за паркирање. Аутомобили који 
+ улазе, могу да уђу, један по један, уколико има слободних места.
+  Уколико нема слободног места, проверава се да ли има аутомобила 
+  који хоће да изађу. Ако након изласка свих аутомобила који желе да изађу
+   и уласка аутомобила који су дошли пре њега за аутомобил неће бити места,
+    он одлази у потрагу за другим паркингом. Аутомобили при изласку плаћају 
+    услуге паркинга и излазе један по један. На почетку предност на рампи имају
+     аутомобили који излазе са паркинга. Након што кроз рампу изађе K узастопних 
+     аутомобила, приоритет се мења (додељује се већи приоритет онима који улазе).
+      Након проласка K узастопних аутомобила који улазе, приоритет се поново мења.
+       Ако нема аутомобила из смера који има приоритет, аутомобили који немају 
+       приоритетни смер смеју да пролазе кроз рампу. Коришћењем једног низа од
+        2N + 1 семафора направити методе за тражење дозвола за улаз и излаз 
+        и обавештавање о уласку и изласку аутомобила са паркинга. 
+        Није дозвољено користити помоћне структуре података ни додатне
+         елементе за синхронизацију процеса. Аутомобили не смеју да се претичу.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------- K1 2022------------------------
+
+
+
+Посматра се забавни парк са N аутића који могу да приме по једну особу 
+(Bumper Cars Problem). M особа се шета по парку и може да одлучи да се провоза.
+ Особа која жели да се вози стаје у ред и чека слободни ауто. 
+ Када се ослободи ауто и претходни возач напусти ауто прва особа из реда
+  добија прилику да вози ауто и да се судара са другим аутима. Након неког времена
+   особа завршава вожњу, враћа ауто на одговарајуће место, напушта ауто и
+    одлази да се шета по парку. Особа може више пута да дође да се вози. 
+    Уколико постоји више аута, особа бира онај који је најдуже чекао на вожњу.
+     Уколико тренутно нема особа које желе да се возе ауто стаје у ред и чека да
+      дође особа. Користећи семафоре написати програм који решава овај проблем.
+
+
+int id; 
+queue<int> freecars; 
+queue<int> freePeople; 
+sem cars[N] = {0}; 
+sem people[M] = {0};
+
+
+
+void person(int myid){
+    int carId; //id auta koji vozimo 
+
+
+    while(true)
+    {
+        wait(mutex); 
+        if(freeCars.size() > 0)
+        {
+            //ima slobodnih mozemo da se vozimmo
+            int car = freeCar.pop(); 
+            id = myid;
+            signal(cars[car]); 
+            wait(people[myid]); //cekamo da nam kaze da je primio broj vozaca
+            
+        }
+        else{
+            //nema slobodnih 
+            people.append(myid); 
+            signal(mutex); 
+            people[myid].wait(); 
+            carId = id; 
+            signal(mutex); 
+            signal(cars[carId]); //signaliziraj da si primio id auta
+
+        }
+        //vozi 
+
+        drive(); 
+
+        signal(cars[car]); 
+    }
+}
+
+
+void car(int myId)
+{
+
+    int driverid; 
+    while(true)
+    {
+        wait(mutex); 
+        if(freePeople.size() > 0)
+        {
+            //ima ko da ga vozi 
+           
+            int personid = freePeople.pop(); 
+            id = myid; 
+            signal(people[personid]); 
+            wait(cars[myid]); //cekam da prihvati id auta
+             
+            
+        }
+        else{
+            freeCars.append(myid); 
+            signal(mutex); 
+            wait(cars[myid]); 
+            personid = id; 
+            mutex.signal(); 
+            signal(people[personid]); //procitao sam id vozaca 
+
+            
+        }
+
+
+        //vozi ga 
+        wait(cars[myid]); 
+    }
+    
+}
+
+
+
+
+
+
+
+-------------FEBRUAR 2020---------------
+
+Користећи расподељене бинарне семафоре решити проблем произвођача и потрошача
+ (Producer – Consumer Problem).
+
+
+const int B = ...; 
+
+int buffer[B]; 
+int head = 0; 
+int tail = 0;
+int cnt = 0; 
+
+
+sem waitingConsumer;  
+sem waitingProducer;
+bool waitingP = false; 
+bool waitingC = false; 
+sem mutexP = 1; 
+sem mutexC = 1; 
+sem mutex = 1; 
+
+
+void producer()
+{
+    sem mysem = 0; 
+
+    while(true)
+    {
+        int element = make_element(); 
+        wait(mutexP); 
+        wait(mutex); 
+        if(cnt == B)
+        {
+            
+            waitingProducer = mysem; 
+            waitingProducer = true; 
+            signal(mutex); 
+            wait(mysem); 
+            wait(mutex); 
+        
+        }
+
+        //znam da ima slobodnog mesta  
+        buffer[tail] = element; 
+        tail = (tail + 1) mod B; 
+       
+        cnt++; 
+        if(waitingC)
+        {
+            waitingC = false; 
+
+            signal(waitingConsumer); 
+        }
+        signal(mutex); 
+        signal(mutexP);
+        
+
+    }
+}
+
+void consumer(){
+    sem mysem  = 0;
+    while(true)
+    {
+        wait(mutexC); 
+        wait(mutex); 
+        if(cnt == 0)
+        {
+            waitingConsumer = mysem; 
+            waitingC = true;  
+            signal(mutex); 
+           wait(mysem); 
+           -wait(mutex); 
+        }
+
+        int el = buffer[head]; 
+        head = (head + 1) mod B ; 
+
+        //znam da ima element koji mogu da uzmem 
+      
+        cnt--; 
+        if(waitingP)
+        {
+            waitingP = false; 
+            signal(waitingProducer); 
+        }
+        signal(mutex); 
+        signal(mutexC); 
+        consume(el); 
+    }
+}
+
+
+----------------FEBRUAR 2022-------------
+Рачун у банци може да дели више корисника (The Savings Account Problem).
+ Сваки корисник може да уплаћује и подиже новац са рачуна под условом да
+  салдо на том рачуну никада не буде негативан. Уколико на рачуну нема
+   довољно новца, корисник треба да чека док неко други не уплати новац на
+    тај рачун. Ниједан корисник не може бити исплаћен док год сви који су пре
+     њега тражили исплату не добију свој новац. Решити проблем користећи семафоре 
+     (не треба проверавати да ли корисник сме да приступи неком рачуну; у банци
+ може постојати више рачуна).
+
+typedef struct zahtev{
+
+    sem sem; 
+    int iznos; 
+}
+
+typedef struct account{
+    int brojracuna; 
+    queue<zahtev> waitingIsplata; 
+    sem mutex; 
+    int stanje; 
+    
+}
+
+
+const int limit = ...;//koliko najvise sme da se uplati/isplati 
+
+void uplata(int iznos, account& acc){
+
+    wait(acc.mutex); 
+    
+    acc.stanje += iznos;
+    
+    //proveri sada da li moze neko da se probudi 
+    while(acc.waitingIsplata.size() > 0 && acc.stanje >= acc.waitingIsplata.front().iznos)
+    {
+        //moze da se probudi , ima dovoljno 
+        acc.stanje -= acc.waitingIsplata.front().iznos; 
+        signal(acc.waitingIsplata.pop().sem); //racunam kao da pop i izbaci i vrati 
+
+    }
+    signal(acc.mutex); 
+
+        
+
+    
+}
+
+
+void isplata(int iznos, account& acc)
+{
+    sem mysem = 0; 
+    wait(acc.mutex); 
+    if(acc.stanje >= iznos)
+    {
+        acc.stanje -= iznos; 
+        signal(acc.mutex); 
+
+    }
+    else{
+        //nema dovoljno 
+        zahtev novizahtev;
+        novizahtev.iznos = iznos; 
+        novizahtev.sem = mysem; 
+        acc.waitingIsplata.append(novizahtev); 
+        signal(acc.mutex); 
+        wait(mysem); 
+
+    }
+
+}
+
+
+
+
+------------------------februar 2025/2026----------------
+
+Проблем вожње тобоганом 
+Претпоставити да постоји N путника и M возила на једном тобогану.
+Путници се наизменично шетају по луна парку и возе на тобогану.
+Једно возило може да прими највише K путника при чему је K < N.
+Вожња тобоганом може да почне само уколико се сакупило тачно K
+путника. Обезбедити да се вожње завршавају у редоследу у којем су и
+почеле, као и да путници који су дуже чекали раније почну своју
+вожњу. Користећи семафоре решити проблем. 
+
+
+const int N = ...; 
+const int M = ...; 
+const int K = ...; 
+
+
+sem start[M] = {0}; 
+start[0] = 1; 
+sem finish[M] = {0}; 
+finsih[0] = 1; 
+sem mutex = 1; 
+sem canBoard = 0; 
+sem canUnboard = 0; 
+sem allBoarded = 0; 
+sem allUnboarded = 0; 
+sem mutexCar = 1; 
+int cntBoarders = 0; 
+itn cntUnboarders = 0;
+int indextoBoard = 0; 
+int indexToUnboard = 0; 
+
+int id = 0; 
+
+
+void rider(){
+    while(true)
+    {
+        walk(); 
+         
+        wait(canBoard); 
+        board(); 
+        wait(mutex);
+        cntBoarders++; 
+        if(cntBoarders== K)
+        {
+            cntBoarders = 0; 
+            cntUnboarders = K; 
+            signal(allBoarded); 
+            signal(mutex); 
+        }
+        else{
+            signal(mutex); 
+            signal(canBoard); 
+        }
+        
+
+
+        //sat in car 
+
+
+        wait(canUnboard); 
+        wait(mutex); 
+        cntUnboarders--; 
+        if(cntUnboarders == 0)
+        { 
+            signal(allUnboarded); 
+            signal(mutex); 
+        }
+        else{
+            signal(mutex); 
+            signal(canUnboard); 
+        }
+        
+    }
+}
+
+
+void car(){
+    wait(mutexCar); 
+    int carId = id++;
+    signal(mutexCar); 
+
+    while(true)
+    {
+       wait(start[carId]); 
+        //signaliziraj riderima da smeju da udju
+        signal(canBoard); 
+        wait(allBoarded); 
+        signal(start[(carid + 1) mod M]); 
+
+        ride(); 
+
+        wait(finish[carid]); 
+        //voznja gotova 
+        signal(canUnboard); 
+        wait(allUnboarded); 
+        //signaliziraj sledecem da moze da dodje 
+        signal(finish[(carid + 1) mod M]); 
+    }
+}
+
+
+
+--------------------mart 2025 2026 -----------------------
+Постоје три врсте операција које се могу обављати над
+једноструко уланчаном листом (The search-insert-delete problem):
+претраживање, убацивање и брисање. Претраживање само прегледа листу,
+тако да се може дозволити да више процеса претражују у паралели.
+Убацивање додаје нови елемент на крај листе. Процеси који убацују су
+међусобно искључиви, али се убацивање може радити у паралели са
+произвољним бројем претраживања. Може се брисати елемент са било
+које позиције у листи. У једном тренутку може само један процес који
+брише да приступа листи. Тај процес има ексклузивни приступ листи.
+
+
+
+
+//bez stafetne palice 
+
+
+
+sem mutex = 1; 
+sem noOneInside = 1; 
+int searchersinserters = 0; 
+
+sem entry = 1; 
+sem inserter = 1; 
+
+
+void delete(){
+    wait(entry); 
+
+    wait(noOneInside);
+    signal(entry); 
+
+    delete(); 
+
+ 
+    signal(noOneInside); 
+
+}
+
+void insert(){
+    wait(entry); 
+    wait(inserter); 
+    wait(mutex);
+
+    searchersinserters++; 
+    if(searchersinserters == 1)
+    {
+       
+        wait(noOneInside); 
+    }
+  
+    signal(mutex); 
+    signal(entry); 
+    
+
+    insert();
+
+
+    wait(mutex); 
+    searchersinserters--; 
+    if(searchersinserters == 0)
+    {
+        signal(noOneInside); 
+    }  
+    signal(mutex); 
+    signal(inserter); 
+}
+
+void search(){
+    wait(entry);
+    wait(mutex);
+
+    searchersinserters++; 
+    if(searchersinserters == 1)
+    {
+        signal(mutex); 
+        wait(noOneInside); 
+    }
+    else{
+        signal(mutex); 
+    }
+    signal(entry);
+     
+
+    search();
+
+
+    wait(mutex); 
+    searchersinserters--; 
+    if(searchersinserters == 0)
+    {
+        signal(noOneInside); 
+    }  
+    signal(mutex); 
+}
+
+
+
+
+---------------------24/25 septembar-----------------
+ Посматра се шпил од 24 карте, подељене у 4 боје, са по 6
+различитих бројева. Игру играју 4 играча, који седе за округлим столом
+и сваки од њих иницијално држи по 4 карте. Између два суседна играча
+се налази гомила са картама, која може у неком тренутку бити празна, а
+иницијално садржи 2 карте. Игра се завршава када неки играч објави да
+има све 4 карте истог броја, у различитим бојама, и тада сви играчи
+прекидају игру. Сваки играч, док год нема 4 исте и нико није објавио да
+је победник, избацује једну карту из своје руке и ставља је на гомилу са
+своје леве стране, потом узима једну карту са врха из гомиле са своје
+десне стране. Претпоставити да су играчима иницијално подељене
+карте на случајан начин. Користећи семафоре, написати изглед
+процедуре за једног играча. Поред играча, не постоји ниједан други
+процес.
+
+ 
+sem kupovi[4] = {2, 2, 2, 2}; 
+set karte[4] = {{}, {}, {},  {}}
+sem mutexKupovi[4] = {1, 1, 1 , 1}; 
+bool pobedioNeko = false;
+
+void igrac(int id){
+
+    karte[id].insert(uzmisvoje4karte()); 
+    
+
+    while(!pobedioNeko)
+    {
+
+        wait(mutexKupovi[id]); 
+        wait(kupovi[id]); 
+        karte[id].insert(uzmikartu()); 
+        signal(mutexKupovi[id]); 
+
+        pobedioSam = proveriPobedio(); 
+        if(pobedioSam)
+        {
+            pobedioNeko = true; 
+        }
+        //proveri da li je neko pobedio pre engo da ides dalje sa stavljanjem karte
+        if(pobedioNeko)continue; 
+        int desni; 
+        if(id == 0)
+        {
+            desni = 3; 
+        }
+        else{
+            desni = id - 1;
+        }
+
+        wait(mutexKupovi[desni]); 
+        stavikartuNaDesniKup(karte[id].removeizabranu()); 
+        signal(kupovi[desni]); 
+        signal(mutexKupovi[desni]); 
+        
+    }
+
+}
+
+
+
+----------------------------sushi bar problem-----------------------
+К Посматра се ресторан у коме људи могу да једу суши (The
+sushi bar problem). У ресторану постоји 5 места за седење. Уколико
+муштерија наиђе и постоји слободно место, муштерија га заузима.
+Уколико је у неком тренутку у ресторану свих 5 места заузето, то значи
+да у ресторану ручају пријатељи на заједничком ручку и да све нове
+муштерије морају да сачекају док сви они не оду како би ушле.
+Реализовати код за муштерије која долазе у ресторан, ручају и
+напуштају га користећи семафоре.
+
+
+
+sem mutex = 1; 
+int waiting = 0; 
+
+sem blocked = 0; 
+
+int cnt = 0; 
+
+
+void customer(){
+    wait(mutex); 
+    
+    
+    if(mustwait)
+    {
+        //vec je puno 
+        waiting++; 
+        signal(mutex); 
+        wait(blocked); 
+        
+    }else{
+        cnt++;
+        if(cnt == 5)
+        {
+            mustwait = true;
+        } 
+        signal(mutex); 
+    }
+
+
+    //eat()
+
+
+    wait(mutex); 
+    cnt--; 
+    if(cnt == 0 && waiting > 0){
+        int wakeup = min(5, waiting); 
+        for(int i = 0; i < wakeup; i++)
+        {
+            signal(blocked); 
+        } 
+        waiting-=wakeup; 
+        cnt = wakeup; 
+        if(cnt < 5) mustwait = false;
+    }
+    signal(mutex); 
+}
+
+
+
+---------------------readers writers problem sa stafetom----------------
+
+Решити проблем Читалаца и писаца (Readers/Writers) користећи
+расподељене бинарне семафоре и технику прослеђивања штафетне
+палице. Потребно је написати 4 методе: lockShared() – желим да читам,
+lockExclusive() – желим да пишем, unlock() – завршавам, и
+upgradeLock() – са читања прелазим на писање, при чему ова метода
+има предност у односу на методе lockShared() и lockExclusive().
+
+
+
+jel ti se ovo cini ok resenje 
+
+```cpp
+
+---------------------readers writers problem sa stafetom----------------
+
+Решити проблем Читалаца и писаца (Readers/Writers) користећи
+расподељене бинарне семафоре и технику прослеђивања штафетне
+палице. Потребно је написати 4 методе: lockShared() – желим да читам,
+lockExclusive() – желим да пишем, unlock() – завршавам, и
+upgradeLock() – са читања прелазим на писање, при чему ова метода
+има предност у односу на методе lockShared() и lockExclusive().
+
+
+
+queue<sem> readers; 
+queue<sem> writers; 
+sem mutex = 1; 
+int r = 0; 
+int w = 0; 
+int dr = 0; 
+int dw = 0; 
+bool upgrade = false; 
+sem upgradeSem = 0; 
+
+
+void lockShared(){
+    sem mysem = 0; 
+    
+        wait(mutex); 
+        if(w > 0 ||( uprade && dw > 0))
+        {
+            dr++; 
+            readers.append(mysem); 
+            signal(mutex); 
+            wait(mysem); 
+        }
+        r++; 
+
+        if(dr > 0 && !pisem){
+            dr--; 
+            signal(readers.pop()); 
+        }
+        else if(w > 0 && pisem)
+        {
+            dw--; 
+            signal(writers.pop()); 
+        }
+        else{
+            signal(mutex); 
+        }
+
+
+
+
+           
+    
+}
+
+
+void unlock(){
+
+    wait(mutex); 
+    if(w > 0)//znaci bio je pisac unutra
+    {
+        w--; 
+        
+    }
+    else {
+        r--; 
+    }
+    if(upgrade && dw > 0)
+    {
+        dw--; 
+        signal(writer.pop());
+    }
+    else if(!upgrade && dr > 0){
+        dr--; 
+        signal(reader.pop()); 
+    }
+    else if(dw > 0) 
+    {
+        dw--; 
+        signal(writer.pop()); 
+    }
+    else if(dr > 0)
+    {
+        dr--; 
+        signal(reader.pop());
+    }
+    else{
+        signal(mutex); 
+    }
+}
+
+
+void lockExclusive(){
+    sem mysem = 0; 
+   
+        wait(mutex); 
+        if(w > 0 || dw > 0 || (!upgrade && rd > 0))
+        {
+            dw++; 
+            writers.append(mysem); 
+            signal(mutex); 
+            wait(mysem); 
+        }
+        
+        w++; 
+        signal(mutex); 
+
+   
+}
+
+
+void upgradeLock(){
+    //sa citanja prelazim na pisanje
+    wait(mutex); 
+    upgrade = true;
+    signal(mutex); 
+}
+ 
+void ciklus(){
+    while(true)
+    {
+        //recimo ovako nekako izgleda 
+        lockShared(); 
+        read(); 
+        unlock(); 
+
+
+
+        lockExclusive() 
+        write(); 
+        unlock(); 
+    }
+}
+
+
+-------------------------24/25---------------------
+
+
+К Потребно је реализовати семафор који поред стандардних
+атомских операција signal() и wait() има и атомске операције signal(n) и
+wait(n) које интерну семафорску променљиву атомски увећава односно
+умањује за n уколико је то могуће, уколико није чека док не буде било
+могуће. Потребно је решити проблем користећи расподељене бинарне
+семафоре и технику предаје штафетне палице. Процес који је раније
+упутио wait захтев треба раније да обави своју операцију.
+Претпоставити да у било ком тренутку максимално N процеса може
+упутити захтев за приступ семафору
+
+
+queue<element> waiting;  
+int value = 0; 
+sem semafor = 0; 
+sem mutex = 1; 
+
+typedef struct element{
+    sem sem; 
+    int wants; 
+}
+
+
+void wait(int n, sem mysem)//proces koji zeli da odradi signal prosledi svoj privatni semafor
+{
+
+    wait(mutex); 
+    if(waiting.size() > 0 || n > value)//kad treba da cekam : kad ima neko ispred mene ili kada nema dovoljno na semaforu
+    {
+
+        element el; 
+        el.sem = mysem; 
+        el.wants = n; 
+        waiting.append(el); 
+        signal(mutex); 
+        wait(mysem); 
+    }
+
+    value-= n ; 
+    //vidi da li mozes jos nekog da pustis 
+    if(waiting.size() > 0 && value >= waiting.front().wants)
+    {
+        signal(waiting.pop().sem); 
+    }
+    else signal(mutex); 
+}
+
+
+void signal(int n){
+    wait(mutex); 
+    value += n ; 
+    if(waiting.size() > 0 && value >=  waiting.front().wants)
+    {
+        signal(waiting.pop().sem); 
+    }
+    else signal(mutex); 
+}
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------INSERT DELETE SEARCH PREKO STAFETNE PALICE -------------------------------
+Постоје три врсте операција које се могу обављати над
+једноструко уланчаном листом (The search-insert-delete problem):
+претраживање, убацивање и брисање. Претраживање само прегледа листу,
+тако да се може дозволити да више процеса претражују у паралели.
+Убацивање додаје нови елемент на крај листе. Процеси који убацују су
+међусобно искључиви, али се убацивање може радити у паралели са
+произвољним бројем претраживања. Може се брисати елемент са било
+које позиције у листи. У једном тренутку може само један процес који
+брише да приступа листи. Тај процес има ексклузивни приступ листи.
+Користећи семафоре и технику предаје штафетне палице решити овај
+проблем.
+
+
+sem inserter = 0;
+sem deleter = 0; 
+sem searcher = 0;
+
+
+int i = 0, d = 0 , s = 0; 
+int di = 0, dd = 0, ds = 0; 
+sem mutex = 1; 
+
+
+
+void inserter(){
+    wait(mutex); 
+    //kada se blokira
+    if(i > 0 || d > 0 || di > 0 || dd > 0)
+    {
+        di++; 
+        signal(mutex); 
+        wait(inserter); 
+    }
+    
+    //usao je 
+    i++; 
+
+    //da li mogu nekog da pustim 
+    if(ds > 0)
+    {
+        ds--; 
+        signal(searcher); 
+    }
+    else {
+        signal(mutex); 
+    }
+
+
+    insert(); 
+
+
+
+    wait(mutex); 
+    i--; 
+    //da li mogu da pustim nekog
+    if(dd > 0 && di == 0)
+    {
+        dd--; 
+        signal(deleter); 
+    }
+    else if(di > 0 && i ==0 )
+    {
+     
+        di--; 
+        signal(inserter); 
+    }
+    else if(ds > 0)
+    {
+        ds--; 
+        signal(searcher); 
+    }
+    else {
+        signal(mutex); 
+    }
+}
+
+
+void searcher(){
+    wait(mutex); 
+    //kada se blokira
+    if(d > 0 || dd > 0 || ds > 0)
+    {
+        ds++; 
+        signal(mutex); 
+        wait(searcher); 
+    }
+    
+    //usao je 
+    s++; 
+
+    //da li mogu nekog da pustim 
+    if(di > 0 && i == 0)
+    {
+        di--; 
+        signal(inserter); 
+    }
+    else {
+        signal(mutex); 
+    }
+
+
+    search(); 
+
+
+
+    wait(mutex); 
+    s--; 
+    //da li mogu da pustim nekog
+    if(dd > 0 && d == 0)
+    {
+        dd--; 
+        signal(deleter); 
+    }
+    else if(di > 0 && i == 0)
+    {
+     
+        di--; 
+        signal(inserter); 
+    }
+    else if(ds > 0 )
+    {
+        ds--; 
+        signal(searcher); 
+    }
+    else {
+        signal(mutex); 
+    }
+}
+
+
+
+void deleter(){
+    wait(mutex); 
+    //kada se blokira
+    if( d > 0 || dd > 0 || s > 0 || i > 0 )
+    {
+        dd++; 
+        signal(mutex); 
+        wait(deleter); 
+    }
+
+
+    d++; 
+    signal(mutex); 
+    delete(); 
+
+
+    wait(mutex); 
+    d--; 
+    if(i  == 0 && di > 0)
+    {
+        di--; 
+        signal(inserter); 
+    }
+    else if(ds > 0)
+    {
+        ds--; 
+        signal(searcher); 
+    }
+    else if(d == 0 && dd > 0)
+    {
+        dd--; 
+        signal(deleter); 
+    }
+    else signal(mutex);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------24/25---------------
+
+1. (20) К Потребно је реализовати тајмер користећи приватне семафоре
+и технику предаје штафетне палице. Тајмер има две методе, прва је
+метода wakeme која омогућава да се дата нит блокирана n јединица
+времена (ово је аргумент), а друга је метода tick која означава да је
+истекла једна јединица времена.
+
+ordered_list<element> sleeping;//racunam da je ordered po ticks!!!!! 
+sem mutex = 1; 
+
+
+typedef struct element{
+    sem sem; 
+    int ticks; 
+}
+
+void wakeme(int n, sem mysem){
+    
+    wait(mutex);
+    if(n > 0)
+    {
+        element el; 
+        el.sem = mysem; 
+        el.ticks = n;     
+        sleeping.add(el); //dodato u uredjenom poretku je sortirano prema ticks !!!
+        signal(mutex); 
+        wait(mysem); 
+    }
+
+
+     if(sleeping.size() > 0 &&sleeping.front().ticks == 0)
+    {
+        signal(sleeping.remove(0)); 
+    }
+    else{
+            signal(mutex); 
+    }
+
+
+
+
+    
+}
+
+void tick(){
+
+    wait(mutex); 
+    for(int i = 0; i < sleeping.size() ; i++)
+    {
+        
+            sleeping[i].ticks--; 
+       
+       
+    }
+    if(sleeping.size() > 0 && sleeping[0].ticks == 0)
+    {
+        signal(sleeping.remove(0)); 
+    }
+    else signal(mutex); 
+}
+
+
+
+
+
+
+
+
+
+
+
+-----------------sushi bar sa stafetom resenje------------------
+
+
+
+
+queue<sem> waiting ;
+int cnt = 0; 
+sem mutex = 1; 
+bool mustwait = false;
+
+
+void customer(sem mysem){
+    wait(mutex); 
+    if(mustwait)
+    {
+        waiting.append(mysem); 
+        signal(mutex); 
+        wait(mysem); 
+    }
+
+    cnt++; 
+    if(cnt == 5)mustwait = true; 
+    //pusti sledeceg ako treba
+    if(mustwait == false && waiting.size() > 0)
+    {
+        signal(waiting.pop()); 
+    }
+    else{
+        signal(mutex); 
+    }
+
+
+    eat();
+    
+    wait(mutex); 
+    cnt--; 
+    if(cnt == 0)
+    {
+        mustwait = false;
+        if(waiting.size() > 0)
+        {
+            signal(waiting.pop()); 
+        }
+        else signal(mutex); 
+    }
+    else signal(mutex); 
+
+}
+
+
+
+
+
+------------------------23/24 berbernica ------------------
+
+//  (12,5) Посматра се берберница у којој за три различите столице
+// раде три берберина (The Hilzer's Barbershop problem). Поред ове три
+// столице у берберници се налази и чекаоница која прима 10
+// муштерија које могу да седе и 10 које могу да стоје, укупно 20. Када
+// муштерија дође до бербернице уколико на шишање чека више од 20
+// муштерија онда одлази, а уколико берберница није пуна онда остаје.
+// Уколико барем један берберин спава муштерија која дође на ред за
+// шишање буди оног берберина који је најдуже спавао и седа у његову
+// столицу. На место те муштерије која је устала седа муштерија која је
+// најдуже стајала. Уколико су сви бербери заузети онда муштерија
+// чека, и то ако има места за седење седа, а ако не онда стоји.
+// Муштерије се опслужују у редоследу по коме су приспеле, и седају у
+// истом том редоследу. Када берберин заврши са шишањем муштерија
+// му плаћа и излази из бербернице. Берберин све време или спава или
+// шиша или наплаћује. Решити овај проблем користећи расподељене
+// бинарне семафоре и технику предаје штафетне палице.
+
+
+
+
+
+
+// ------------------23/24-----------------
+// 2. (12,5) K1 Трајект за превоз аутомобила, камиона и аутобуса превози
+// возила са обале на обалу. Трајект поседује N позиција које су линеарно
+// постављене једна иза друге. Камион заузима три, аутобус две, а
+// аутомобил једну позицију. Возила чекају на трајект у реду и на њега
+// улазе једно по једно по редоследу у којем чекају у реду, док на трајекту
+// има места. Када наредно возило у реду за трајект нема места да се
+// укрца или када је трајект пун, трајект започиње превоз возила на другу
+// обалу. На другој обали возила се искрцавају у редоследу супротном од
+// редоследа у којем су се укрцала. Када се сва возила искрцају, празан
+// трајект се враћа на почетну обалу. Користећи семафоре написати
+// програм који решава овај проблем. Уколико је потребно могу се
+// динамички правити семафори.
+
+
+
+
+
+stack<sem> ukrcani; 
+queue<element> ulaze; 
+
+typedef struct element{
+sem sem; 
+string tip;
+int mesta; 
+}
+
+const int N = ...; //broj mesta 
+int cnt = 0; 
+sem mutex = 1;
+sem ukrcan = 0; 
+int ukrcavase = 0; 
+sem imaVozila = 0; 
+
+void trajekt(){
+
+    while(true)
+    {
+        wait(mutex); 
+        ukrcavase = 0; 
+        cnt = 0; 
+        //dosao spreman da se ukrcaju
+        while(cnt < N)
+        {
+            if(ulaze.size() == 0)
+            {
+                signal(mutex); 
+            }
+            wait(imaVozila);
+            wait(mutex); 
+            if(cnt + ulaze.front().mesta > N)break;
+            ukrcavase++;
+            cnt += ulaze.front().mesta; 
+            element el = ulaze.pop(); 
+            ukrcani.push(el.sem); 
+            signal(el.sem); 
+            wait(usao); 
+        }
+
+        //svi koji su trebali da se ukrcaju su se ukrcali
+
+        travel()
+
+
+        //stigli na drugu stranu 
+
+
+        wait(mutex); 
+        //svima signaliziraj da se iskrcaju
+        for(int i = 0; i < ukrcavase; i++)
+        {
+            signal(ukrcani.pop().signal)
+            wait(izasao); 
+        }
+
+        signal(mutex);
+
+        //svi su izasli sad se vratimo nazad 
+        goback(); 
+    }
+
+}
+
+void autobus(){
+    sem mysem; 
+    element el; 
+    el.sem = mysem; 
+    el.tip = "autobus"; 
+    el.mesta = 2; 
+
+    while(true)
+    {
+       //ukrcaj se 
+       wait(mutex); 
+       ulaze.append(mysem);
+       signal(mutex); 
+       signal(imaVozila); 
+       --wait(mysem); 
+       signal(usao); 
+       
+       //u medjuvremenu se vozi 
+
+
+        //cekaj da izadjes
+        wait(mysem);
+        signal(izasao);  
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+THE LITTLE BOOK OF SEMAPHORES -----------------------------------------------------------
+
+
+
+-----------RENDEZVOUS-------------
+
+
+sem a2 = 0; 
+sem b2 = 0; 
+
+
+
+void A(){
+    statement a1
+    signal(b2)
+    wait(a2)
+    statement a2
+}
+
+void B (){
+    statement b1
+    signal(a2)
+    wait(b2)
+    statement b2 
+
+}
+
+
+
+
+-----------QUEUE------------
+
+
+sem followersQueue = 0; 
+sem leadersQueue = 0; 
+
+
+void follower()
+{
+    signal(leaderQueue); 
+    wait(followersQueue); 
+    dance()
+}
+void leader(){
+    signal(followersQueue); 
+    wait(leaderQueue); 
+    dance(); 
+}
+
+
+
+
+-------EXCLUSIVE QUEUE LEADERS AND FOLLOWWERS----
+
+
+
+sem followers = 0; 
+sem leaders = 0; 
+int l = 0, f = 0; 
+
+
+void leader(){
+    wait(mutex)
+    if(f > 0)
+    {
+        f--; 
+        followers.signal()
+    }
+    else{
+        l++; 
+        signal(mutex)
+        leaders.wait(); 
+    }
+
+    dance();
+    rendezvous.wait();
+    signal(mutex);
+    
+}
+
+void followers(){
+    wait(mutex)
+    if(l > 0)
+    {
+        l--; 
+        signal(learders); 
+    }
+    else{
+        f++; 
+        signal(mutex); 
+        wait(followers); 
+    }
+
+    dance(); 
+    rendezvous.wait(); 
+
+
+}
+
+
+
+---------readers writers sa writer starvation -----------------
+
+
+sem rw = 1; 
+int r = 0; 
+sem mutex = 1; 
+sem entry = 1; 
+
+
+void writer(){
+    wait(entry);
+    wait(rw); 
+    write(); 
+    signal(entry);
+    signal(rw);
+    
+}
+
+void reader(){
+    wait(entry);
+    wait(mutex)
+    r++; 
+    if(r == 1)wait(rw); 
+    signal(mutex); 
+    signal(entry);
+
+    read()
+    wait(mutex)
+    r--; 
+    if ( r == 0)
+    {
+        signal(rw); 
+    }
+    signal(mutex); 
+}
+
+
+
+----------writers prioritet solution--------/////////////////////////////////////////nisaaamm znalaaaaaa tooooopppppp jeeeeeeeeeeeeee
+
+
+//svaki od light switcheva ima svoj mutex i svoj counter !!!!!
+
+sem readers = 1; 
+sem writers = 1; 
+sem mutexR = 1; 
+sem mutexW = 1; 
+
+
+int r = 0; 
+int w = 0;//koliko writera ceka
+
+void writer(){
+    wait(mutexW)
+    w++;
+    if( w == 1)wait(readers)
+    signal(mutexW);
+    
+    wait(writers)
+    write(); 
+    signal(writers)
+
+    wait(mutexW)
+    w--; 
+    if(w == 0)
+    {
+        signal(readers);
+    }
+    signal(mutexW); 
+    
+
+    
+
+}
+
+void reader(){
+    wait(readers)
+    r++;
+    if( r ==  1)
+    {
+        wait(writers); 
+    }
+    signal(readers);
+
+   
+    read(); 
+
+
+    wait(mutexR); 
+    r--; 
+    if( r == 0)
+    {
+        signal(writers);
+    }
+}
+
+
+
+------------no starvation morrisov algoritam DVE SOBE---------------------------------- 
+
+
+sem door1 = 1; 
+sem door2 = 0; 
+int room1 = 0; 
+int room2 = 0; 
+sem mutex = 1; 
+
+
+vizuelno: 
+
+room1 -> door1 -> room2--> door2 --> critical section
+
+
+void morris(){
+
+    wait(mutex);
+    room1++; //ulazi u prvu sobu 
+    signal(mutex); 
+
+    wait(door1); 
+    room2++; 
+    wait(mutex)
+    room1--; 
+    if(room1 == 0)
+    {
+         
+        signal(door2);
+    }
+    else signal(door1); 
+    signal(mutex); 
+
+
+    wait(door2); 
+    room2--; 
+    //critical section
+    if(room2 == 0)
+    {
+        signal(door1); 
+    }
+    else signal(door2); 
+
+    
+}
+
+
+
+
+
+
+
+-------------SMOKERS PROBLEM ---------------------
+
+sem agent = 1; 
+sem tobacco = 0; 
+sem paper = 0; 
+sem match = 0;
+sem mutex = 1; 
+sem smokerWithMatch =0, smokerWithPaper = 0, SmokerWithTobacco = 0;
+
+
+void Agent(){
+    wait(agent); 
+    int c = rand(0, 2); 
+    if(c == 0)
+    {
+        signal(paper); 
+        signal(match); 
+    }
+    else if(c == 1)
+    {
+        signal(paper); 
+        signal(tobacco);
+    }
+    else{
+        signal(tobacco); 
+        signal(match); 
+    }
+}
+
+void pusherTobacco()//ceka na tobbaco i onda budi onog kog treba 
+{
+    wait(tobacco); 
+    wait(mutex);
+    if(isPaper){
+        isPaper = False; 
+        signal(smokerWithMatch);
+    }
+    else if(isMatch)
+    {
+        isMatch = False; 
+        signal(smokerWithPaper)
+    }
+    else{
+        isTobacco = True; 
+    }
+    signal(mutex); 
+    
+
+}
+
+//slicno i za ostala 2 pushera 
+
+void SmokerWithTobacco(){
+    wait(SmokerWithTobacco); 
+    makeCigarette(); 
+    agentSem.signal(); 
+    smoke(); 
+
+}
+
+
+
+
+------------isto smokers problem ali moze da se nagomilavaju sastojci-------
+
+int papercnt = 0, tobaccocnt = 0, matchcnt = 0; 
+
+void Agent(){
+    while(true){
+    int c = rand(0, 2); 
+    if(c == 0)
+    {
+        signal(paper); 
+        signal(match); 
+    }
+    else if(c == 1)
+    {
+        signal(paper); 
+        signal(tobacco);
+    }
+    else{
+        signal(tobacco); 
+        signal(match); 
+    }
+}
+}
+
+void TobaccoPusher(){
+    wait(tobacco); 
+    wait(mutex); 
+    if(papercnt> 0)
+    {
+        papercnt--;
+        
+        signal(smokerTobacco); 
+    }
+    else if....
+
+
+    else{
+        tobaccocnt++;
+        isTobacco = true; 
+    }
+    signal(mutex);
+}
+
+void SmokerTobacco(){
+    while(true){
+    wait(smokerTobacco); 
+    makecigarette(); 
+    smoke(); 
+    }
+}
+
+----------------the dining savages-------------
+
+
+int servings = 0; 
+sem cook = 0; 
+
+
+void savage(){
+    while(true)
+    {
+        wait(mutex); 
+        if(servings == 0)
+        {
+            signal(cook); 
+            wait(full); 
+        }
+        servings--; 
+        signal(mutex); 
+        eat();
+    }
+}
+
+void cook(){
+    while(true)
+    {
+        wait(cook); 
+        servings = M; 
+        signal(full);
+    }
+}
+
+
+
+
+
+
+
+----------the barber shop problem -------------
+
+
+const int N = ...; 
+
+sem waitForCut = 0;
+sem barber = 0;
+int chairsFree = N;
+sem mutex = 1;
+sem finished = 0;
+
+
+void person(){
+    wait(mutex); 
+    if(chairsFree == 0)
+    {
+        signal(mutex);
+        balk();
+    }
+
+    chairsFree--; 
+    signal(barber); 
+    signal(mutex);
+
+
+    wait(waitForCut); 
+
+    //having haricut
+    signal(customerDone)
+
+    wait(finished); 
+    wait(mutex)
+    chairsFree++;
+    signal(mutex); 
+
+
+}
+
+
+
+void barber(){
+    wait(barber);
+
+    signal(waitForCut); 
+
+    cutHair(); 
+
+    wait(CustomerDone0)
+    signal(finsihed); 
+
+}
+
+
+
+
+
+
+
+
+------------the fifo barbershop-------
+The FIFO barbershop
+
+Hint: you can refer to the current thread as self, 
+so if you write 
+self.sem = Semaphore(0), 
+each thread gets its own semaphore.
+
+
+const int N = ...;
+int takenchairs = 0; 
+queue privsems;  
+sem mutex = 1; 
+sem customerdone = 0, barber = 0;
+ 
+
+//SVE OPERACIJE SA QUEUE MORAJU DA BUDU POD MUTEXOM JER ONE NISU ATOMICNE 
+
+
+
+void customer(){
+
+    sem mysem = 0;
+    wait(mutex); 
+    
+    if(takenchairs  == N)
+    {
+        signal(mutex); 
+        balk(); 
+    }
+    privsems.append(mysem)
+    takenchairs++; 
+    signal(mutex); 
+
+
+    signal(barber); 
+    wait(mysem); 
+
+    //have cut
+
+    signal(customerdone); 
+    wait(finished); 
+
+    wait(mutex); 
+  
+    takenchairs--;
+    signal(mutex); 
+}
+
+void barber(){
+    wait(barber); 
+    
+    wait(mutex); 
+    sem sem = privsems.pop()
+    signal(mutex); 
+
+    signal(sem); 
+    
+    cutHair()
+    wait(customerfinished); 
+    signal(finished); 
+}
+
+
+
+----------- Hilzer’s Barbershop problem-----------
+
+
+
+
+queue<sem> waitingOnSofa; 
+queue<sem> waitingStanding; 
+int sofacnt = 0; 
+int standingcnt = 0; 
+int ukupno = 0;
+
+
+const int maxsofa = 4; 
+const int maxstanding = 16;
+const int max = 20; 
+sem barbers = 0;
+
+sem mutex = 1; 
+sem checking = 1;
+sem canPay = 0;
+sem payed = 0;
+sem finished = 0;
+
+void customer(){
+    sem mysem = 0;
+    wait(mutex); 
+    if(ukupno == max)
+    {
+        signal(mutex); 
+        balk(); 
+    }
+
+    ukupno++;
+    //sad gledamo gde ce da ceka
+    ----if(sofacnt < maxsofa)//sesce na sofu
+    {
+        sofacnt++;
+        waitingOnSofa.append(mysem); 
+    }
+    else{
+        standingcnt++; 
+        waitingStanding.append(mysem); 
+    }
+
+    ----signal(mutex); 
+
+
+    signal(barbers); 
+    wait(mysem); 
+
+
+    //have haircut
+
+   
+
+
+    wait(canPay); 
+    pay(); 
+    signal(payed); 
+
+    wait(mutex)
+    ukupno--; 
+    signal(mutex); 
+
+
+
+}
+
+
+void barber(){
+
+    while(true)
+    {
+        wait(barbers); 
+        wait(mutex); 
+        sem customer = waitingOnSofa.pop(); 
+        sofacnt--; 
+        if(standingcnt > 0)
+        {
+            standingcnt--; 
+            sem s = waitingStanding.pop()
+            waitingOnSofa.append(s); 
+            sofacnt++; 
+        }
+        signal(mutex); 
+
+        //imam izabranog customera 
+
+        signal(customer); 
+
+        cutHair(); 
+        
+
+        wait(checking); 
+        signal(canPay); 
+        wait(payed); 
+        signal(checking); 
+
+
+
+
+
+    }
+
+
+}
+\
+
+
+
+
+
+-------------------SANTA CLAUS PROBLEM -----------------
+
+
+
+sem elvesmutex = 1; 
+int elvescnt = 0; 
+int horsecnt = 0; 
+
+
+sem mutex = 1; 
+sem santa = 0; 
+
+void santa(){
+    while(true)
+    {
+        wait(santa); 
+        //probudio se gleda ko ga je probudio 
+
+
+        wait(mutex); 
+        if(horsecnt >= 9)
+        {
+            for(int i = 0; i < 9; i++)signal(horses); 
+
+            horses -= 9;
+            preparehorses(); 
+
+        }
+        else if(elvescnt == 0)
+        {
+            
+
+            // for(int i = 0; i < 3; i++)
+            // {
+            //     signal(elves); 
+            // }
+            fixproblems(); 
+        }
+        signal(mutex); 
+
+    }
+}
+
+void elf(){
+    wait(elvesmutex); 
+    wait(mutex); 
+    elvescnt++; 
+    if(elvescnt == 3)
+    {
+        signal(santa); 
+
+    }
+    else{
+        signal(elvesmutex); 
+    }
+    signal(mutex); 
+    // wait(elves); 
+    getHelp(); 
+
+
+    wait(mutex); 
+    elvescnt--; 
+    if(elvescnt == 0)
+    {
+        signal(elvesmutex); 
+    }
+    signal(mutex); 
+
+
+}
+
+void horse(){
+    wait(mutex); 
+    horsescnt++; 
+    if(horsescnt == 9)
+    {
+        signal(santa)
+    }
+
+    signal(mutex); 
+    
+    getPrepared();
+    
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------h20 problem ali sa queues -----------------
+
+
+
+queue<sem> oxygenQueue; 
+queue<sem> hydrogenQueue; 
+int o = 0, h = 0; 
+sem mutex = 1; 
+
+
+
+void oxygen(){
+
+   ---- sem mysem = 0; 
+
+    wait(mutex); 
+    ----oxygenQueue.append(mysem); 
+    o++;
+    if(h >= 2)
+    {
+        //svi dosli mozemo da napravimo molekul
+        sem o1 = oxygenQueue.pop(); 
+        o--; 
+        sem h1 = hydrogenQueue.pop(); 
+        sem h2 = hydrogenQueue.pop(); 
+        h--; 
+        h--;
+        signal(o1)
+        signal(h1)
+        signal(h2); 
+        
+    }
+    else signal(mutex); 
+
+    wait(mysem); 
+    bond(); 
+    barrier();
+    signal(mutex);
+
+
+}
+
+void hydrogen(){
+
+    sem mysem = 0; 
+
+    wait(mutex); 
+    hydrogenQueue.append(mysem); 
+    h++;
+    if(h >= 2 && o > 0)
+    {
+        //svi dosli mozemo da napravimo molekul
+        sem o1 = oxygenQueue.pop(); 
+        o--; 
+        sem h1 = hydrogenQueue.pop(); 
+        sem h2 = hydrogenQueue.pop(); 
+        h--; 
+        h--;
+        signal(o1)
+        signal(h1)
+        signal(h2); 
+        
+    }
+    else signal(mutex); 
+
+    wait(mysem); 
+    bond(); 
+    barrier(); ---
+
+
+}
+
+
+
+
+
+
+
+
+----------------CROSSING RIVER PROBLEM --------------
+
+
+sem mutex = 1; 
+int s = 0; 
+int h = 0; 
+
+queue<sem> surfersQueue; 
+queue<sem> hackersQueue; 
+
+
+
+
+
+void surfer(){
+    sem mysem = 0; 
+    wait(mutex); 
+    s++; 
+    surfersQueue.append(mysem)
+    if(s == 4)
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            signal(surfersQueue.pop())
+        }
+        s-=4; 
+    }
+    else if(s == 2 && h >= 2)
+    {
+        for(int i = 0; i < 2; i++)
+        {
+            signal(surfersQueue.pop())
+        }
+        for(int i = 0; i < 2; i++)
+        {
+            signal(hackersQueue.pop())
+        }
+
+        s-=2 ; 
+        h-=2; 
+    }
+    else {
+        signal(mutex); 
+    }
+
+
+    wait(mysem); 
+
+    board(); 
+    barrier(); 
+
+
+}
+
+
+
+
+void barrier(){
+    wait(door1); 
+    cnt++ 
+    if(cnt == 4)
+    {
+        signal(door2); 
+    }
+    else signal(door1); 
+
+
+    wait(door2); 
+
+    cnt--; 
+    if(cnt == 0)
+    {
+        signal(mutex); 
+        sail(); 
+        signal(door1); 
+    }
+    else signal (door2);
+}
+
+
+
+---------------------ROLLER COASTER ----------------
+
+
+const int N = ...; 
+const int C = ...; 
+
+int wantToBoard = 0;  
+
+queue<sem> wantToBoardQueue ; 
+queue<sem>wantToUnboardQueue ; 
+
+sem mutex = 1;
+
+
+
+void passenger(){
+
+    sem mysem = 0; 
+    while(true)
+    {
+
+        wait(mutex); 
+
+        wantToBoardQueue.append(mysem); 
+        wantToBoard++; 
+        if(wantToBoard == C)signal(car);
+        signal(mutex);
+
+
+        wait(mysem); 
+        board();
+    
+        wait(mutex); 
+        wantToUnboardQueue.append(mysem); 
+        signal(mutex); 
+
+        barrier(); 
+
+
+
+        //ride
+
+        wait(mysem); 
+
+        unboard(); 
+    }
+}
+
+void car(){
+    while(true)
+    {
+        wait(car);
+        
+        load(); 
+        wait(mutex);
+        for(int i = 0; i < C; i++)
+        {
+            signal(wantToBoardQueue.pop()); 
+        } 
+        wantToBoard-=C; 
+        signal(mutex); 
+
+        barrier(); 
+
+        run(); 
+        unload(); 
+        wait(mutex);
+        for(int i = 0; i < C; i++)
+        {
+            signal(wantToUnBoardQueue.pop()); 
+        } 
+        signal(mutex); 
+
+
+
+        barrierunboard(); 
+
+
+
+        
+
+    }
+}
+
+
+
+void barrierboard(){
+    wait(door1); 
+    cnt++ 
+    if(cnt == C + 1)
+    {
+        signal(door2); 
+    }
+    else signal(door1); 
+
+
+    wait(door2); 
+
+    cnt--; 
+    if(cnt == 0)
+    {
+         
+        signal(door1); 
+    }
+    else signal (door2);
+}
+
+void barrierunboard(){
+    wait(door1); 
+    cnt++ 
+    if(cnt == C + 1)
+    {
+        signal(door2); 
+    }
+    else signal(door1); 
+
+
+    wait(door2); 
+
+    cnt--; 
+    if(cnt == 0)
+    {
+        signal(door1); 
+    }
+    else signal (door2);
+}
+
+
+ Multi-car Roller Coaster problem
+This solution does not generalize to the case where there is more than one car.
+In order to do that, we have to satisfy some additional constraints:
+• Only one car can be boarding at a time.
+• Multiple cars can be on the track concurrently.
+• Since cars can’t pass each other, they have to unload in the same order
+they boarded.
+• All the threads from one carload must disembark before any of the threads
+from subsequent carloads.
+Puzzle: modify the previous solution to handle the additional constraints.
+You can assume that there are m cars, and that each car has a local variable
+named i that contains an identifier between 0 and m − 1.
+
+
+
+
+const int N = ...; 
+const int C = ...; 
+const int numCars = ...;
+
+int wantToBoard = 0;  
+
+queue<sem> wantToBoardQueue ; 
+queue<sem>wantToUnboardQueue ; 
+
+sem mutex = 1;
+
+sem loadingArea[numCars] = {0};
+sem unloadingArea[numCars] = {0}; 
+
+loadingArea[0] = 1; 
+unloadingArea[0] = 1; 
+
+
+void passenger(){
+
+    sem mysem = 0; 
+    while(true)
+    {
+
+        wait(mutex); 
+
+        wantToBoardQueue.append(mysem); 
+        wantToBoard++; 
+        if(wantToBoard == C)signal(car);
+        signal(mutex);
+
+
+        wait(mysem); 
+        board();
+    
+        wait(mutex); 
+        wantToUnboardQueue.append(mysem); 
+        signal(mutex); 
+
+        barrier(); 
+
+
+
+        //ride
+
+        wait(mysem); 
+
+        unboard(); 
+    }
+}
+
+void car(){
+    while(true)
+    {
+        wait(loadingArea[i]);
+        
+        load(); 
+        wait(mutex);
+        for(int i = 0; i < C; i++)
+        {
+            signal(wantToBoardQueue.pop()); 
+        } 
+        wantToBoard-=C; 
+        signal(mutex); 
+
+        barrierboard(); 
+
+        signal(loadingArea[next(i)]); 
+        run(); 
+        wait(unloadingArea[i]); 
+        unload(); 
+        wait(mutex);
+        for(int i = 0; i < C; i++)
+        {
+            signal(wantToUnBoardQueue.pop()); 
+        } 
+        signal(mutex); 
+
+
+
+        barrierunboard(); 
+
+
+        signal(unloadingArea[next(i)]);
+
+
+
+        
+
+    }
+}
+
+
+
+void barrierboard(){
+    wait(door1); 
+    cnt++ 
+    if(cnt == C + 1)
+    {
+        signal(door2); 
+    }
+    else signal(door1); 
+
+
+    wait(door2); 
+
+    cnt--; 
+    if(cnt == 0)
+    {
+         
+        signal(door1); 
+    }
+    else signal (door2);
+}
+
+void barrierunboard(){
+    wait(door1); 
+    cnt++ 
+    if(cnt == C + 1)
+    {
+        signal(door2); 
+    }
+    else signal(door1); 
+
+
+    wait(door2); 
+
+    cnt--; 
+    if(cnt == 0)
+    {
+        signal(door1); 
+    }
+    else signal (door2);
+}
+
+
+
+
+
+-----------------------The search-insert-delete problem---------------------
+
+
+sem searcher = 1; 
+sem inserter = 1; 
+int searchercnt = 0; 
+sem entry = 1; 
+
+
+sem mutexS = 1; 
+
+
+
+
+void searcher(){
+    wait(entry)
+    wait(mutexS); 
+    searchercnt++; 
+    if(searchercnt == 1)wait(searcher); 
+    signal(mutexS); 
+    signal(entry); 
+    search(); 
+    wait(mutexS); 
+    searchercnt--; 
+    if(searchercnt == 0)
+    {
+        signal(searcher); 
+    }
+    signal(mutexS); 
+}
+
+void inserter(){
+    wait(inserter); 
+    insert(); 
+    signal(inserter); 
+}
+
+void deleter(){
+    wait(entry); 
+    wait(searcher); 
+    wait(inserter); 
+    delete(); 
+    signal(inserter); 
+    signal(searcher);
+    signal(entry);  
+}
+
+
+
+
+
+
+
+
+-------------------STUDENTI I STAZA PROBLEM -----------
+
+
+
+status = 'neutral'  # neutral, mods_rule, reshall_rule, 
+                    # transition_to_mods, transition_to_reshall
+
+
+mods = 0
+reshall = 0
+
+modsCanEnter = Semaphore(1)      # propusnica za mods
+reshallCanEnter = Semaphore(1)   # propusnica za reshall
+
+# Cekaonice - blokiraju se dok ne dobiju vlast
+modsWaiting = Semaphore(0)       # mods cekaju ovde dok ne pobede
+reshallWaiting = Semaphore(0)    # reshall cekaju ovde dok ne pobede
+
+mutex = Semaphore(1)
+
+
+def mods_student():
+    # --- ULAZ ---
+    modsCanEnter.wait()      # da li smem da udjem?
+    modsCanEnter.signal()    # da, odmah pusti sledeceg moda
+
+    mutex.wait()
+    mods++
+
+    if status == 'neutral':
+        status = 'mods_rule'   # prvi mod preuzima stazu
+        mutex.signal()
+
+    elif status == 'reshall_rule':
+        if mods > reshall:                    # mods postali vise
+            status = 'transition_to_mods'
+            reshallCanEnter.wait()            # ZATVORI ulaz za reshall
+            mutex.signal()
+            modsWaiting.wait()               # cekaj da reshall napuste stazu
+
+        else:                                 # reshall jos vise
+            mutex.signal()
+            modsWaiting.wait()               # cekaj u cekaoni
+
+    elif status == 'transition_to_mods':     # tranzicija vec u toku
+        mutex.signal()
+        modsWaiting.wait()                   # pridruzи se cekaoni
+
+    else:                                    # mods_rule -> odmah prodji
+        mutex.signal()
+
+    # --- STAZA ---
+    cross()
+
+    # --- IZLAZ ---
+    mutex.wait()
+    mods--
+
+    if mods == 0:                            # poslednji mod izlazi
+        if status == 'transition_to_reshall':
+            reshallCanEnter.signal()         # otvori ulaz za reshall
+            if reshall > 0:
+                reshallWaiting.signal(reshall)  # probudi sve reshall
+                status = 'reshall_rule'
+            else:
+                status = 'neutral'
+
+    if status == 'mods_rule':
+        if reshall > mods:                   # reshall postali vise
+            status = 'transition_to_reshall'
+            modsCanEnter.wait()              # ZATVORI ulaz za mods
+    
+    mutex.signal()
+
+
+def reshall_student():
+    # --- ULAZ ---
+    reshallCanEnter.wait()      # da li smem da udjem?
+    reshallCanEnter.signal()    # da, odmah pusti sledeceg reshall
+
+    mutex.wait()
+    reshall++
+
+    if status == 'neutral':
+        status = 'reshall_rule'   # prvi reshall preuzima stazu
+        mutex.signal()
+
+    elif status == 'mods_rule':
+        if reshall > mods:                      # reshall postali vise
+            status = 'transition_to_reshall'
+            modsCanEnter.wait()                 # ZATVORI ulaz za mods
+            mutex.signal()
+            reshallWaiting.wait()              # cekaj da mods napuste stazu
+
+        else:                                   # mods jos vise
+            mutex.signal()
+            reshallWaiting.wait()              # cekaj u cekaoni
+
+    elif status == 'transition_to_reshall':    # tranzicija vec u toku
+        mutex.signal()
+        reshallWaiting.wait()                  # pridruzи se cekaoni
+
+    else:                                      # reshall_rule -> odmah prodji
+        mutex.signal()
+
+    # --- STAZA ---
+    cross()
+
+    # --- IZLAZ ---
+    mutex.wait()
+    reshall--
+
+    if reshall == 0:                           # poslednji reshall izlazi
+        if status == 'transition_to_mods':
+            modsCanEnter.signal()              # otvori ulaz za mods
+            if mods > 0:
+                modsWaiting.signal(mods)       # probudi sve mods
+                status = 'mods_rule'
+            else:
+                status = 'neutral'
+
+    if status == 'reshall_rule':
+        if mods > reshall:                     # mods postali vise
+            status = 'transition_to_mods'
+            reshallCanEnter.wait()             # ZATVORI ulaz za reshall
+
+    mutex.signal()
+
+
+
+    --------------------sushi bar-----------------
+
+sem blocked = 0; 
+int waiting = 0; 
+int eating = 0; 
+sem mutex = 1; 
+
+bool mustwait = false;
+
+void person(){
+    wait(mutex);
+    if(mustwait)
+    {
+        waiting++; 
+        signal(mutex); 
+        wait(blocked); 
+    }
+    else{
+        eating++; 
+        if(eating == 5)mustwait = true; 
+        signal(mutex); 
+    }
+
+
+    eatsushi(); 
+
+
+    wait(mutex); 
+    eating--; 
+    if(eating == 0)
+    {
+        m = min(waiting, 5); 
+        waiting-= m; 
+        eating = m; 
+        if(eating == 5)mustwait=true; 
+        for(int i = 0; i < m; i++)
+        {
+            signal(blocked); 
+        }
+    }
+    signal(mutex)
+}
+
+
+
+
+
+
+
+
+
+--------------child care problem ------------
+
+int brd = 0; 
+int brv = 0; 
+
+sem canLeave = 0; 
+sem waitingchildren = 0; 
+int waitingchildren = 0; 
+int waitingadults = 0;
+sem mutex = 1; 
+
+
+void adult(){
+
+    wait(mutex); 
+    brv++; 
+    if(waiting > 0)
+    {
+        int n = min(waiting, 3);  
+        for(int i = 0; i < n; i++)
+        {
+            signal(waitingchildren); 
+        }
+        waiting -= n; 
+        children += n; 
+
+    }
+    signal(mutex); 
+
+    //critical section
+
+    wait(mutex); 
+    
+    if(brv - 1 < brd){
+        waitingadults++;
+        signal(mutex); 
+        wait(canLeave); 
+    }
+    else{
+        brv--; 
+        signal(mutex); 
+    }
+
+}
+
+void child(){
+   
+   
+    wait(mutex); 
+    
+    if(brv * 3 <= brd){
+        waiting++; 
+        signal(mutex);
+        wait(waitingchildren);
+          
+    }
+    else{
+        brd++; 
+        signal(mutex); 
+    }
+    
+
+
+    //critical section
+
+
+    wait(mutex)
+    brd--; 
+    while(brd <= brv-1*3  && waitingadults > 0)
+    {
+        signal(canLeave); 
+        waitingadults -=1 ; 
+        brv--; 
+    }
+    
+    signal(mutex); 
+     
+    
+    
+
+}
+
+--------------------room party problem -----------------
+1. Any number of students can be in a room at the same time.
+2. The Dean of Students can only enter a room if there are no students in
+the room (to conduct a search) or if there are more than 50 students in
+the room (to break up the party).
+3. While the Dean of Students is in the room, no additional students may
+enter, but students may leave.
+4. The Dean of Students may not leave the room until all students have left.
+5. There is only one Dean of Students, so you do not have to enforce exclusion
+among multiple deans.
+
+int students = 0; 
+sem mutex = 1; 
+
+string dean = 'not here'; //in room / waiting
+
+sem allowedEntrance = 1; //stops students from entering when dean in in the room
+sem liein = 0; //na ovom semaforu ceka dean dok se ne desi jedna d one 2 situacije
+
+
+void dean(){
+
+    wait(mutex); 
+    if(students > 0 && students < 50)
+    {
+        dean = 'waiting'; 
+        signal(mutex); 
+        wait(liein); 
+    }
+
+    if(students == 50)
+    {
+        dean = in room; 
+        breakupparty(); 
+
+        wait(allowedEntrance); 
+        signal(mutex); 
+        wait(empty); 
+ 
+        signal(allowedEntrance)
+    }
+    else if(students = 0)
+    {
+      
+        search();
+
+          
+    }  
+    dean = not here 
+    mutex.signal(); 
+}
+
+void student(){
+    wait(mutex); 
+    if(dead == in room ){
+        mutex.signal(); 
+        wait(allowedEntrance); 
+        signal(allowedEntrance);
+        wait(mutex); 
+    }
+    if(dean == waiting && studnets == 50)
+    {
+
+        signal(liein); 
+    }
+    else{
+    signal(mutex); 
+    }
+
+
+    //critical section; 
+
+    wait(mutex); 
+    students--; 
+    if(dean == waiting && students == 0)
+    {
+        signal(liein); 
+    }
+    else if(studnets == 0 && dean = in room )
+    {
+        signal(empty); 
+    }
+    else{
+        signal(mutex); 
+    }
+    
+}
+
+
+
+
+
+
+
+
+
+
+-----------------------the senate bus problem -------------------
+
+
+
+
+int cnt = 0; 
+int waiting = 0; 
+queue <sem>waitingRiders;
+int canBoard = 0;  
+
+sem mutex = 1;  
+sem allboarded = 0; 
+sem door1 = 1; 
+sem door2 = 0;
+int inbarrier = 0;  
+
+
+void rider(){
+    sem mysem = 0; 
+    wait(mutex); 
+    waiting++; 
+    waitingRiders.append(mysem);
+    signal(mutex); 
+    wait(mysem); 
+
+    board(); 
+
+    barrier(); 
+}
+
+
+void bus(){
+    wait(mutex); 
+    if(waiting > 0)
+    {
+        canBoard = min(50 - cnt, waiting);
+        for(int i = 0; i < canBoard; i++)
+        {
+            signal(waitingRiders.pop())
+            waiting--; 
+        } 
+        signal(mutex); 
+
+        barrier();   
+     
+    }
+    else signal(mutex); 
+    depart(); 
+}
+
+
+void barrier(){
+    wait(door1); 
+    inbarrier++; 
+    if(inbarrier == canBoard + 1)
+    {
+        signal(door2); 
+    }
+    else signal(door1); 
+    wait(door2); 
+    inbarrier--; 
+    if(inbarrier ==0 )
+    {
+        signal(door1); 
+    }
+    else{
+        signal(door2); 
+    }
+}
+
+
+----------njihovo resenje------------
+
+int riders = 0; 
+sem mutex = 1; 
+sem entry = 50; 
+sem allBoard = 0; 
+
+
+void bus(){
+    wait(mutex)
+    if(riders > 0)
+    {
+        signal(bus); 
+        allboard.wait(); 
+    }
+    signal(mutex); 
+
+}
+
+
+void rider(){
+    wait(entry); 
+    wait(mutex); 
+    riders++; 
+    signal(mutex); 
+    wait(bus); 
+    signal(entry); 
+    
+    
+    board(); 
+
+    riders--; 
+    if(riders == 0)
+    {
+        signal(allboard); 
+    }
+    else bus.signal(); 
+}
+
+
+
+
+---------------------IMMIGRANTS AND JUDGE---------------
+
+
+
+int immigrants = 0; 
+sem mutex = 1; 
+sem enter = 1; 
+sem confirmed = 0; 
+sem checked = 0; 
+sem allgone = 1; 
+
+
+void immigrant(){
+
+    wait(enter); 
+    enter(); 
+    imigrants++; 
+    signal(enter); 
+
+    checkIn()
+    signal(checked); 
+
+    sitDown(); 
+
+
+
+
+    wait(confirmed); 
+
+    swear(); 
+    getCertificate(); 
+
+    wait(enter);
+    leave();
+    immigrants --; 
+    if(imigrants == 0)signal(allgone); 
+    signal(enter); 
+
+}
+
+void judge(){
+    wait(allgone); 
+    wait(enter); 
+    //usao judge 
+
+    enter(); 
+
+    //cekaj da svi imigranti urade checkin
+
+    for(int i = 0; i < immigrants; i++)
+    {
+        wait(checked); 
+    }
+    //svi uradili checkedin 
+
+    confirm(); 
+    for(int i = ; i < immigrants; i++)
+    {
+        signal(confirmed); 
+    }
+
+
+    leave();
+
+    signal(enter); 
+
+}
+
+void spectator(){
+    wait(enter); 
+    enter(); 
+    signal(enter); 
+    //usao
+
+
+    spectate(); 
+
+    leave(); 
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+-----------------dining hall problem ----------------
+
+
+int students = 0; 
+sem mutex = 1; 
+bool iswaiting = false; 
+int rwadyToLeave = 0; 
+sem blockedStudent = 0; 
+
+
+void student(){
+
+    wait(mutex); 
+    students++; 
+    if(iswaiting)
+    {
+        signal(blockedStudent)
+        iswaiting = false;
+        students--; 
+    }
+    signal(mutex); 
+
+    getFood(); 
+    dine(); 
+
+
+    wait(mutex); 
+    readyToLeave ++; 
+    if(students == 2)
+    {
+        if(readyToLeave == 2)//znaci oba su spreman da idu, znaci oba mogu da idu
+        {
+            iswaiting = false; 
+            readyToLeave-=2; 
+            students-=2; 
+            signal(blockedStudent); 
+            signal(mutex); 
+        }
+        else{
+            iswaiting = true;
+            signal(mutex); 
+        
+            wait(blockedStudent); 
+        }
+        
+    }
+    else{
+        students--;
+        signal(mutex); 
+    }
+    
+    
+}
+
+
+
+
+
+-------------------extended problem dining----------------
+ne sme ni da sedne sam ni da ode a da ostavi nekoga samog 
+
+
+
+
+
+int students = 0; 
+sem canEnter = 0; 
+sem canLeave = 0; 
+sem mutex = 1; 
+int readyToLeave = 0; 
+int readyToEnter = 0; 
+
+
+void student(){
+    getFood(); 
+    wait(mutex); 
+    readyToEnter++; 
+    if(readyToLeave == 1)
+    {
+        //neko hoce da izadje
+        readyToLeave--; 
+        students--; 
+        signal(canLeave); 
+        readyToEnter--; 
+        students++; 
+        signal(mutex); 
+    }
+    if(readyToEnter == 1 && students == 0)
+    {
+        signal(mutex); 
+        wait(canEnter); 
+    }
+    else if(readyToEnter == 2 and students == 0){
+        //ulazim ja i dozvoljavam blokiranm da udje 
+        students+=2; 
+        readyToEnter-=2; 
+        signal(canEnter); 
+
+    }
+    else {
+        //vec ima studenata unutra 
+        readyToEnter--; 
+        students++; 
+        signal(mutex); 
+    }
+
+
+    dine(); 
+
+
+    wait(mutex); 
+    readyToLeave++; 
+    if(students == 2 && readyToLeave == 1)
+    {
+        //moramo da cekamo da zavrsi i onaj drugi 
+        signal(mutex); 
+        wait(canLeave)
+
+    }
+    else if(students == 2 and readyToLeave == 2)
+    {
+        //mozemo da izadjemo obojica 
+        students-=2; 
+        readyToLeave-=2; 
+        signal(canLeave)
+        signal(mutex); 
+    }
+    else{
+        students--; 
+        readyToLeave--; 
+        signal(mutex); 
+    }
+    
+}
+
+
+
+// Посматра се берберница у којој за три различите столице
+// раде три берберина (The Hilzer's Barbershop problem). Поред ове три
+// столице у берберници се налази и чекаоница која прима 10
+// муштерија које могу да седе и 10 које могу да стоје, укупно 20. Када
+// муштерија дође до бербернице уколико на шишање чека више од 20
+// муштерија онда одлази, а уколико берберница није пуна онда остаје.
+// Уколико барем један берберин спава муштерија која дође на ред за
+// шишање буди оног берберина који је најдуже спавао и седа у његову
+// столицу. На место те муштерије која је устала седа муштерија која је
+// најдуже стајала. Уколико су сви бербери заузети онда муштерија
+// чека, и то ако има места за седење седа, а ако не онда стоји.
+// Муштерије се опслужују у редоследу по коме су приспеле, и седају у
+// истом том редоследу. Када берберин заврши са шишањем муштерија
+// му плаћа и излази из бербернице. Берберин све време или спава или
+// шиша или наплаћује. Решити овај проблем користећи расподељене
+// бинарне семафоре и технику предаје штафетне палице.
+
+
+queue<sem> sofa; 
+queue<sem> stoje 
+int sofa = 0; 
+int stoje = 0; 
+queue<sem> spavaju; 
+int spavaju  = 0; 
+int sisajuse = 0;
+queue<sem> placanje ; 
+sem platio = 0; 
+
+sem mutex = 1; 
+
+
+void musterija(sem mysem){
+
+
+
+    while(true)
+    {
+        wait(mutex); 
+        //uslov cekanja
+        //cekam na sofi
+        if(sofa < 10)//ako ima mesta na sofi i ako on nije jedini u sobi ili ukoliko jedini ceka ali nema slobodnih barbera 
+        {
+            sofa++; 
+            sofa.append(mysem); 
+            signal(mutex); 
+            wait(mysem);  
+
+        }
+        else if(stoje < 10)//ima mesta da stoji 
+        {
+            stoje++; 
+            stoje.append(mysem); 
+            signal(mutex); 
+            wait(mysem); 
+        }
+        else if(sofa == 10 && stoje == 10)//nema mesta 
+        {
+            signal(mutex); 
+            return;
+        }
+
+
+        //dosao je customer na red 
+        //da li moze nekog da pusti? mislim da ovde nema budjenja za barbera jer je on taj koji budi musteriju i on je onda budan u tom trenutku 
+
+        
+        placanje.append(mysem)
+       
+
+        //da li moze jos nekog da probudi time sto je on usao?? moze samo da prebaci onog ko stoji da sedne, i moze da probudi barbera 
+
+        if(stoje > 0)
+        {
+            sofa.append(stoje.pop()); 
+            sofa++; 
+            stoje--;
+        }
+        if(spavaju.size() > 0)
+        {
+            signal(spavaju.pop()); 
+        }
+        else{
+            signal(mutex);
+        }
+
+
+        sisajse(); 
+
+
+
+        wait(mysem); //cekaj da platis
+        signal(platio); 
+        
+    }
+    
+    
+
+    void barber(sem mysem){
+      
+        while(true)
+        {
+            wait(mutex); 
+            //kada se blokiram? kad nema nikoga 
+            if(sofa == 0)
+            {
+                spavaju.append(mysem); 
+              
+                signal(mutex);  
+                wait(mysem); 
+            }
+
+            
+            //usao sam , da li time a mogu da odblokiram nekoga? 
+            if(sofa > 0)
+            {signal(sofa.pop());
+            sofa--; 
+            }
+            else {
+                signal(mutex); 
+            }
+         
+
+
+            sisaj(); 
+
+            wait(mutex); 
+
+            naplati(); 
+            signal(placanje.pop()); 
+            wait(placeno); 
+            //zavrsio sam da li mogu da oslbodim nekog?? mogu onog ko ceka...
+            signal(mutex); 
+
+        }
+
+    }
+
+}
